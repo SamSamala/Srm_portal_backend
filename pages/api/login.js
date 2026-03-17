@@ -1,5 +1,12 @@
-console.log("🔥 API HIT");
 const { startLogin } = require('../../lib/scraper');
+
+export const config = {
+  api: {
+    bodyParser: { sizeLimit: '4mb' },
+    responseLimit: false,
+    externalResolver: true,
+  },
+};
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -14,33 +21,42 @@ export default async function handler(req, res) {
 
   const expectedToken = Buffer.from(email).toString('base64');
 
-  // 🔥 AUTO LOGIN
+  // AUTO LOGIN (session restore)
   if (sessionToken && sessionToken === expectedToken) {
     try {
-      const result = await startLogin(email, null, true);
+      const result = await Promise.race([
+        startLogin(email, null, true),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('timeout')), 250000)
+        )
+      ]);
       return res.status(200).json(result);
     } catch (e) {
-      return res.status(401).json({ error: 'Session expired' });
+      res.setHeader('Set-Cookie', 'sessionId=; Max-Age=0; Path=/');
+      return res.status(401).json({ error: 'session_expired' });
     }
   }
 
+  // FULL LOGIN
   try {
-    const result = await startLogin(email, password, false);
+    const result = await Promise.race([
+      startLogin(email, password, false),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Login timed out. SRM portal is slow — please try again.')), 250000)
+      )
+    ]);
 
     if (!result.needsCaptcha) {
       const sessionId = Buffer.from(email).toString('base64');
-
       res.setHeader(
         'Set-Cookie',
         `sessionId=${sessionId}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=86400`
       );
-
       result.sessionToken = sessionId;
     }
 
-    res.status(200).json(result);
-
+    return res.status(200).json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 }
