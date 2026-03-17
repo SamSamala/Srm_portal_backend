@@ -5,7 +5,7 @@ import { getDayOrder } from './Dashboard';
 
 export default function App() {
   const [dark,        setDark]        = useState(false);
-  const [view,        setView]        = useState('landing');
+  const [view,        setView]        = useState('loading');
   const [email,       setEmail]       = useState('');
   const [pass,        setPass]        = useState('');
   const [loading,     setLoading]     = useState(false);
@@ -125,12 +125,18 @@ async function autoLogin(email, token) {
 
     const json = await res.json();
 
-    if (res.ok && !json.needsCaptcha) {
-      setData(json.data);
-      setView('dashboard');
-    } else {
-      logout();
-    }
+    if (res.ok && !json.needsCaptcha && json.data) {
+  console.log("AutoLogin success:", json);
+
+  setData(json.data);
+  setView('dashboard');
+
+} else {
+  console.log("AutoLogin failed:", json);
+
+  // ❗ DO NOT logout (this was killing your session)
+  setView('landing');
+}
 
   } catch (e) {
     logout();
@@ -149,6 +155,6 @@ async function autoLogin(email, token) {
     handleLogin, handleCaptcha, logout,
   };
 
-  if (view === 'landing') return <Landing onLogin={() => setView('login')} dark={dark} setDark={setDark} />;
+  if (view === 'loading') {return <div style={{padding:20}}>Checking session...</div>;}
   return <Dashboard {...shared} />;
 }
