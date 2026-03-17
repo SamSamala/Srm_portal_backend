@@ -19,12 +19,16 @@ export default function App() {
   const [dataLoading, setDataLoading] = useState(false);
 
   useEffect(() => {
-    const o = getDayOrder(new Date());
-    const token = typeof window !== 'undefined' && localStorage.getItem('srm_session_token');
-    const savedEmail = typeof window !== 'undefined' && localStorage.getItem('srm_session_email');
-    if (token && savedEmail) { setSavedToken(token); setEmail(savedEmail); }
-  }, []);
+  const token = localStorage.getItem('srm_session_token');
+  const savedEmail = localStorage.getItem('srm_session_email');
 
+  if (token && savedEmail) {
+    setSavedToken(token);
+    setEmail(savedEmail);
+
+    autoLogin(savedEmail, token); // 👈 THIS LINE
+  }
+}, []);
   async function handleLogin(e) {
     e?.preventDefault();
     if (!email || !pass) { setError('Enter email and password.'); return; }
@@ -93,14 +97,47 @@ export default function App() {
   }
 
   async function logout() {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('srm_session_token');
-      localStorage.removeItem('srm_session_email');
-    }
-    setSavedToken('');
-    try { await fetch('/api/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) }); } catch (e) {}
-    setView('landing'); setData(null); setEmail(''); setPass('');
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('srm_session_token');
+    localStorage.removeItem('srm_session_email');
   }
+  setSavedToken('');
+  try { await fetch('/api/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) }); } catch (e) {}
+  setView('landing'); setData(null); setEmail(''); setPass('');
+}
+
+
+// 👇 ADD THIS RIGHT HERE (same file, below logout)
+
+async function autoLogin(email, token) {
+  try {
+    setDataLoading(true);
+
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        password: 'AUTO_LOGIN',
+        sessionToken: token
+      })
+    });
+
+    const json = await res.json();
+
+    if (res.ok && !json.needsCaptcha) {
+      setData(json.data);
+      setView('dashboard');
+    } else {
+      logout();
+    }
+
+  } catch (e) {
+    logout();
+  } finally {
+    setDataLoading(false);
+  }
+}
 
   const shared = {
     dark, setDark, view, setView, data, setData,
