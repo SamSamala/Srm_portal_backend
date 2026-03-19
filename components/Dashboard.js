@@ -37,18 +37,17 @@ function getMonthDays(year,month){
 
 function MarksGraph({ tests, dark }) {
   if (!tests || tests.length === 0) return null;
-  const W=300, H=110, ML=28, MR=8, MT=8, MB=26;
+  const W=300, H=120, ML=28, MR=10, MT=10, MB=28;
   const pw=W-ML-MR, ph=H-MT-MB;
   const acc=dark?'#4f8dff':'#2563eb';
   const t3=dark?'rgba(148,163,184,.7)':'rgba(100,116,139,.7)';
-  const gridC=dark?'rgba(255,255,255,.06)':'rgba(0,0,0,.07)';
+  const gridC=dark?'rgba(255,255,255,.07)':'rgba(0,0,0,.07)';
   const totalX=tests.length+1;
   const toX=(xi)=>ML+(xi/totalX)*pw;
   const toY=(pct)=>MT+ph-(Math.min(pct,100)/100)*ph;
   const pts=tests.map((t,i)=>({
     x:toX(i+1),
     y:t.scored!==null&&t.maxMarks>0?toY((t.scored/t.maxMarks)*100):null,
-    pct:t.scored!==null&&t.maxMarks>0?Math.round((t.scored/t.maxMarks)*100):null,
     name:t.name,
   }));
   const firstIdx=pts.findIndex(p=>p.y!==null);
@@ -63,6 +62,7 @@ function MarksGraph({ tests, dark }) {
   }
   const totalScored=tests.reduce((s,t)=>t.scored!==null?s+parseFloat(t.scored):s,0);
   const totalMax=tests.reduce((s,t)=>s+parseFloat(t.maxMarks||0),0);
+  const axisY=MT+ph;
   return(
     <div className="mgraph">
       <div className="mgraph-hd">
@@ -70,18 +70,29 @@ function MarksGraph({ tests, dark }) {
         {totalMax>0&&<div className="mgraph-tot" style={{color:acc}}>{Math.round(totalScored*100/totalMax)}% &nbsp;<span style={{fontWeight:400,fontSize:9,color:t3}}>({totalScored}/{totalMax})</span></div>}
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:H,display:'block',overflow:'visible'}}>
+        {/* Horizontal grid lines */}
         {[0,25,50,75,100].map(g=>(
           <g key={g}>
             <line x1={ML} y1={toY(g)} x2={W-MR} y2={toY(g)} stroke={gridC} strokeWidth="1"/>
             <text x={ML-4} y={toY(g)+3} textAnchor="end" fontSize="7" fill={t3}>{g}</text>
           </g>
         ))}
+        {/* Vertical grid lines at each test */}
+        {pts.map((p,i)=>(
+          <line key={i} x1={p.x} y1={MT} x2={p.x} y2={axisY} stroke={gridC} strokeWidth="1"/>
+        ))}
+        {/* Axis lines */}
+        <line x1={ML} y1={MT} x2={ML} y2={axisY} stroke={gridC} strokeWidth="1"/>
+        <line x1={ML} y1={axisY} x2={W-MR} y2={axisY} stroke={gridC} strokeWidth="1"/>
+        {/* Dashed from origin to first point */}
         {dashD&&<path d={dashD} stroke={acc} strokeWidth="1.5" strokeDasharray="3,3" fill="none" opacity=".5"/>}
+        {/* Solid line */}
         {solidD&&<path d={solidD} stroke={acc} strokeWidth="1.5" fill="none"/>}
+        {/* Dots + labels */}
         {pts.map((p,i)=>p.y===null?null:(
           <g key={i}>
             <circle cx={p.x} cy={p.y} r="3" fill={acc}/>
-            <text x={p.x} y={H-MB+14} textAnchor="middle" fontSize="7.5" fill={t3}>{p.name}</text>
+            <text x={p.x} y={axisY+12} textAnchor="middle" fontSize="7.5" fill={t3}>{p.name}</text>
           </g>
         ))}
       </svg>
@@ -289,12 +300,12 @@ tbody td{padding:11px 14px;font-size:12px;vertical-align:middle;}
   background:var(--surf);border:1px solid var(--border);border-radius:10px;transition:border-color .12s;}
 .prow:hover{border-color:var(--bord2);}
 .prow.free{opacity:.3;}
-.pnum{font-size:9px;color:var(--text3);min-width:14px;font-family:'Varela Round',sans-serif;}
-.ptime{font-size:9px;color:var(--text3);font-family:'Varela Round',sans-serif;white-space:nowrap;min-width:80px;}
+.pnum{font-size:9px;color:var(--text3);min-width:16px;text-align:center;font-family:'Varela Round',sans-serif;flex-shrink:0;}
+.ptime{font-size:9px;color:var(--text3);font-family:'Varela Round',sans-serif;white-space:nowrap;min-width:72px;flex-shrink:0;}
 .pname-wrap{flex:1;min-width:0;overflow:hidden;}
-.pname{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.pfaculty{font-size:9px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;}
-.proom{font-size:9px;color:var(--text3);font-family:'Varela Round',sans-serif;white-space:nowrap;}
+.pname{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;}
+.pfaculty{font-size:9px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;margin-top:1px;}
+.proom{font-size:8px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;margin-top:1px;font-style:italic;}
 .ptype{font-size:8px;font-weight:700;padding:2px 6px;border-radius:3px;white-space:nowrap;text-transform:uppercase;flex-shrink:0;}
 .pt{background:${d?'rgba(79,141,255,.1)':'rgba(37,99,235,.07)'};color:var(--accent);}
 .pp{background:${d?'rgba(34,209,122,.1)':'rgba(5,150,105,.07)'};color:var(--green);}
@@ -483,7 +494,7 @@ function classifyEvent(event) {
   if(e.includes('holiday')) return 'holiday';
   if(e.includes('last working day')||e.includes('last day of class')) return 'lastday';
   if(e.includes('first working day')||e.includes('commencement of class')||e.includes('classes commence')||e.includes('reopening')) return 'firstday';
-  if(e.includes('enrollment')||e.includes('enrolment')||e.includes('online enrollment')) return 'enrollment';
+  if(e.includes('enrollment')||e.includes('enrolment')||e.includes('registration')||e.includes('re-registration')) return 'enrollment';
   if(e.includes('exam')||e.includes('cia')||e.includes('assessment')||e.includes('test')) return 'exam';
   return 'event';
 }
@@ -746,7 +757,11 @@ export default function Dashboard({
   ['Day 1','Day 2','Day 3','Day 4','Day 5'].forEach(d=>{ttByDay[d]=[];});
   tt.forEach(p=>{if(ttByDay[p.day])ttByDay[p.day].push(p);});
   Object.values(ttByDay).forEach(a=>a.sort((x,y)=>x.period-y.period));
-  const todayOrd=getDayOrder(new Date());
+  const _td=new Date();
+  const _tdKey=_td.getFullYear()+'-'+String(_td.getMonth()+1).padStart(2,'0')+'-'+String(_td.getDate()).padStart(2,'0');
+  const _tdPInfo=plannerData?plannerData[_tdKey]:null;
+  const todayOrd=_tdPInfo?.order!=null?_tdPInfo.order:(_tdPInfo?null:getDayOrder(_td));
+  const todayEvent=_tdPInfo?.event||((!_tdPInfo?.order&&_tdPInfo)?'Holiday':null);
   const OC=dark?OC_DARK:OC_LIGHT;
   const pCol=(risk)=>risk==='danger'?'var(--red)':risk==='warning'?'var(--yellow)':'var(--green)';
 
@@ -855,9 +870,9 @@ export default function Dashboard({
             <span className="lname">SRM <span style={{color:'var(--text2)',fontWeight:400}}>Portal</span></span>
           </div>
           <div className="topbar-right">
-            {todayOrd&&(
-              <div className="today-badge" style={{background:OC[todayOrd]+'18',color:OC[todayOrd],border:'1px solid '+OC[todayOrd]+'30'}}>
-                Day {todayOrd} · Today
+            {(todayOrd||todayEvent)&&(
+              <div className="today-badge" style={todayOrd?{background:OC[todayOrd]+'18',color:OC[todayOrd],border:'1px solid '+OC[todayOrd]+'30'}:{background:'rgba(34,209,122,.12)',color:'var(--green)',border:'1px solid rgba(34,209,122,.25)'}}>
+                {todayOrd?'Day '+todayOrd:todayEvent||'Holiday'} · Today
               </div>
             )}
             {dataLoading&&<div style={{width:14,height:14,borderRadius:'50%',border:'2px solid var(--border)',borderTopColor:'var(--accent)',animation:'spin .7s linear infinite'}}/>}
@@ -899,11 +914,12 @@ export default function Dashboard({
                     {(()=>{
                       const totScored=marks.reduce((s,m)=>s+m.tests.reduce((a,t)=>a+(t.scored||0),0),0);
                       const totMax=marks.reduce((s,m)=>s+m.tests.reduce((a,t)=>a+t.maxMarks,0),0);
-                      const todayCol=todayOrd?OC[todayOrd]:'var(--text3)';
+                      const todayCol=todayOrd?OC[todayOrd]:todayEvent?'var(--green)':'var(--text3)';
+                      const todayVal=todayOrd?'Day '+todayOrd:todayEvent||'Holiday';
                       return [
                         {lbl:'Overall Attendance',val:overall+'%',sub:(totC-totA)+' of '+totC+' classes',col:overall<75?'var(--red)':overall<80?'var(--yellow)':'var(--green)',ac:overall<75?'var(--red)':overall<80?'var(--yellow)':'var(--green)'},
                         {lbl:'Internal Marks',val:totMax>0?(totScored.toFixed(1)+' / '+totMax):'-',sub:'across '+marks.length+' subjects',col:'var(--accent)',ac:'var(--accent)'},
-                        {lbl:'Today',val:todayOrd?'Day '+todayOrd:'Holiday',sub:new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'}),col:todayCol,ac:todayCol},
+                        {lbl:'Today',val:todayVal,sub:new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'}),col:todayCol,ac:todayCol},
                       ].map(s=>(
                         <div key={s.lbl} className="scard">
                           <div className="scard-lbl">{s.lbl}</div>
@@ -1013,8 +1029,8 @@ export default function Dashboard({
                               <><div className="pname-wrap">
                                 <span className="pname">{p.name}</span>
                                 {p.faculty&&<span className="pfaculty">{p.faculty}</span>}
+                                {p.room&&<span className="proom">{p.room}</span>}
                               </div>
-                              <span className="proom">{p.room}</span>
                               <span className={'ptype '+(p.type==='Practical'?'pp':'pt')}>{p.type}</span></>
                             ):<span style={{fontSize:12,color:'var(--text3)',flex:1,fontStyle:'italic'}}>Free</span>}
                           </div>
