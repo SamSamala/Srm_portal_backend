@@ -193,12 +193,32 @@ input,button,select{font-family:inherit;}
   padding-bottom:env(safe-area-inset-bottom,0px);}
 .bnav-inner{display:flex;height:var(--bnav);}
 .bni{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:2px;cursor:pointer;border:none;background:transparent;padding:4px 2px;
-  -webkit-tap-highlight-color:transparent;}
-.bni-ico{font-size:18px;line-height:1;}
-.bni-lbl{font-size:9px;font-weight:500;color:var(--text3);transition:color .15s;}
-.bni.on .bni-lbl{color:var(--accent);font-weight:700;}
-.bni.on .bni-ico{filter:${d?'drop-shadow(0 0 6px rgba(79,141,255,.6))':'none'};}
+  gap:3px;cursor:pointer;border:none;background:transparent;padding:6px 2px;
+  -webkit-tap-highlight-color:transparent;color:var(--text3);transition:color .15s;}
+.bni.on{color:var(--accent);}
+.bni-ico{width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
+.bni-lbl{font-size:9px;font-weight:500;transition:color .15s;}
+.bni.on .bni-lbl{font-weight:700;}
+.bni.on .bni-ico svg{filter:${d?'drop-shadow(0 0 5px rgba(79,141,255,.5))':'none'};}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.55);
+  backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px;}
+.modal{background:var(--surf);border:1px solid var(--border);border-radius:18px;
+  padding:28px 24px 20px;max-width:300px;width:100%;text-align:center;
+  box-shadow:0 24px 48px rgba(0,0,0,.35);}
+.modal-icon{width:44px;height:44px;border-radius:12px;background:rgba(255,92,92,.12);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:20px;}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:5px;}
+.modal-sub{font-size:12px;color:var(--text3);margin-bottom:22px;line-height:1.5;}
+.modal-btns{display:flex;gap:8px;}
+.modal-cancel{flex:1;padding:11px;border:1px solid var(--border);border-radius:10px;
+  background:var(--surf2);color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;
+  transition:border-color .15s;}
+.modal-cancel:hover{border-color:var(--bord2);}
+.modal-signout{flex:1;padding:11px;border:none;border-radius:10px;background:var(--red);
+  color:#fff;font-size:13px;font-weight:600;cursor:pointer;opacity:.92;transition:opacity .15s;}
+.modal-signout:hover{opacity:1;}
 
 /* PAGE */
 .page{position:relative;z-index:1;padding:clamp(12px,2.5vw,20px) clamp(12px,2.5vw,28px);
@@ -754,6 +774,7 @@ export default function Dashboard({
   const [activeDay,setActiveDay]=useState('Day 1');
   const [loginStartTime,setLoginStartTime]=useState(null);
   const [plannerData,setPlannerData]=useState(null);
+  const [showLogoutModal,setShowLogoutModal]=useState(false);
 
   useEffect(()=>{const o=getDayOrder(new Date());if(o)setActiveDay('Day '+o);},[]);
 
@@ -784,12 +805,19 @@ export default function Dashboard({
   const OC=dark?OC_DARK:OC_LIGHT;
   const pCol=(risk)=>risk==='danger'?'var(--red)':risk==='warning'?'var(--yellow)':'var(--green)';
 
+  const NAV_ICONS={
+    dashboard:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
+    attendance:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>,
+    marks:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+    timetable:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>,
+    calendar:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+  };
   const NAV=[
-    {k:'dashboard',l:'Dashboard',i:'+'},
-    {k:'attendance',l:'Attendance',i:'📋'},
-    {k:'marks',l:'Marks',i:'📝'},
-    {k:'timetable',l:'Timetable',i:'🕐'},
-    {k:'calendar',l:'Calendar',i:'📅'},
+    {k:'dashboard',l:'Home'},
+    {k:'attendance',l:'Attendance'},
+    {k:'marks',l:'Marks'},
+    {k:'timetable',l:'Timetable'},
+    {k:'calendar',l:'Calendar'},
   ];
 
   // -- Loading screen --
@@ -917,15 +945,15 @@ export default function Dashboard({
               <span>Refresh</span>
             </button>
             <button className="ibt" onClick={()=>setDark(d=>!d)}>{dark?'☀':'☾'}</button>
-            <button className="btn-sm" onClick={logout}>Sign out</button>
+            <button className="btn-sm" onClick={()=>setShowLogoutModal(true)}>Sign out</button>
           </div>
         </div>
 
         {/* DESKBAR */}
         <div className="deskbar">
-          {NAV.map(({k,l,i})=>(
+          {NAV.map(({k,l})=>(
             <div key={k} className={'navit'+(tab===k?' on':'')} onClick={()=>goTab(k)}>
-              <span style={{marginRight:4,fontSize:11}}>{i}</span>{l}
+              <span style={{marginRight:5,display:'inline-flex',verticalAlign:'middle',width:13,height:13,opacity:.7}}>{NAV_ICONS[k]}</span>{l}
             </div>
           ))}
         </div>
@@ -957,11 +985,11 @@ export default function Dashboard({
                       const todayCol=todayOrd?OC[todayOrd]:todayEvent?'var(--green)':'var(--text3)';
                       const todayVal=todayOrd?'Day '+todayOrd:todayEvent||'Holiday';
                       return [
-                        {lbl:'Overall Attendance',val:overall+'%',sub:(totC-totA)+' of '+totC+' classes',col:overall<75?'var(--red)':overall<80?'var(--yellow)':'var(--green)',ac:overall<75?'var(--red)':overall<80?'var(--yellow)':'var(--green)'},
-                        {lbl:'Internal Marks',val:totMax>0?(totScored.toFixed(1)+' / '+totMax):'-',sub:'across '+marks.length+' subjects',col:'var(--accent)',ac:'var(--accent)'},
-                        {lbl:'Today',val:todayVal,sub:new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'}),col:todayCol,ac:todayCol},
+                        {lbl:'Overall Attendance',val:overall+'%',sub:(totC-totA)+' of '+totC+' classes',col:overall<75?'var(--red)':overall<80?'var(--yellow)':'var(--green)',ac:overall<75?'var(--red)':overall<80?'var(--yellow)':'var(--green)',nav:'attendance'},
+                        {lbl:'Internal Marks',val:totMax>0?(totScored.toFixed(1)+' / '+totMax):'-',sub:'across '+marks.length+' subjects',col:'var(--accent)',ac:'var(--accent)',nav:'marks'},
+                        {lbl:'Today',val:todayVal,sub:new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'}),col:todayCol,ac:todayCol,nav:'timetable'},
                       ].map(s=>(
-                        <div key={s.lbl} className="scard">
+                        <div key={s.lbl} className="scard" style={{cursor:'pointer'}} onClick={()=>goTab(s.nav)}>
                           <div className="scard-lbl">{s.lbl}</div>
                           <div className="scard-val" style={{color:s.col}}>{s.val}</div>
                           <div className="scard-sub">{s.sub}</div>
@@ -1101,15 +1129,30 @@ export default function Dashboard({
         {/* MOBILE BOTTOM NAV */}
         <div className="bnav">
           <div className="bnav-inner">
-            {NAV.map(({k,l,i})=>(
+            {NAV.map(({k,l})=>(
               <button key={k} className={'bni'+(tab===k?' on':'')} onClick={()=>goTab(k)}>
-                <span className="bni-ico">{i}</span>
+                <span className="bni-ico">{NAV_ICONS[k]}</span>
                 <span className="bni-lbl">{l}</span>
               </button>
             ))}
           </div>
         </div>
       </div>
+
+      {/* LOGOUT CONFIRMATION MODAL */}
+      {showLogoutModal&&(
+        <div className="modal-overlay" onClick={()=>setShowLogoutModal(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div className="modal-icon">🚪</div>
+            <div className="modal-title">Sign out?</div>
+            <div className="modal-sub">You'll need to log in again to view your data.</div>
+            <div className="modal-btns">
+              <button className="modal-cancel" onClick={()=>setShowLogoutModal(false)}>Cancel</button>
+              <button className="modal-signout" onClick={()=>{setShowLogoutModal(false);logout();}}>Sign out</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

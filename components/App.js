@@ -8,7 +8,7 @@ const LS_DATA_TIME = 'srm_data_cache_ts';
 const LS_CACHE_MAX_AGE = 4 * 60 * 60 * 1000; // 4 hours
 
 export default function App() {
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(() => localStorage.getItem('srm_dark') === '1');
   const [view,        setView]        = useState('loading');
   const [email,       setEmail]       = useState('');
   const [pass,        setPass]        = useState('');
@@ -31,6 +31,9 @@ export default function App() {
       setLastUpdatedTs(now);
     } catch(e) {}
   }
+
+  // Persist dark mode preference
+  useEffect(() => { localStorage.setItem('srm_dark', dark ? '1' : '0'); }, [dark]);
 
   // On mount: check for saved session + localStorage data cache
   useEffect(() => {
