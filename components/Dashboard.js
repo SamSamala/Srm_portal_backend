@@ -35,6 +35,60 @@ function getMonthDays(year,month){
   return days;
 }
 
+function MarksGraph({ tests, dark }) {
+  if (!tests || tests.length === 0) return null;
+  const W=300, H=110, ML=28, MR=8, MT=8, MB=26;
+  const pw=W-ML-MR, ph=H-MT-MB;
+  const acc=dark?'#4f8dff':'#2563eb';
+  const t3=dark?'rgba(148,163,184,.7)':'rgba(100,116,139,.7)';
+  const gridC=dark?'rgba(255,255,255,.06)':'rgba(0,0,0,.07)';
+  const totalX=tests.length+1;
+  const toX=(xi)=>ML+(xi/totalX)*pw;
+  const toY=(pct)=>MT+ph-(Math.min(pct,100)/100)*ph;
+  const pts=tests.map((t,i)=>({
+    x:toX(i+1),
+    y:t.scored!==null&&t.maxMarks>0?toY((t.scored/t.maxMarks)*100):null,
+    pct:t.scored!==null&&t.maxMarks>0?Math.round((t.scored/t.maxMarks)*100):null,
+    name:t.name,
+  }));
+  const firstIdx=pts.findIndex(p=>p.y!==null);
+  const ox=toX(0), oy=toY(0);
+  let dashD='', solidD='';
+  if(firstIdx>=0){
+    dashD=`M${ox},${oy} L${pts[firstIdx].x},${pts[firstIdx].y}`;
+    solidD=`M${pts[firstIdx].x},${pts[firstIdx].y}`;
+    for(let i=firstIdx+1;i<pts.length;i++){
+      if(pts[i].y!==null) solidD+=` L${pts[i].x},${pts[i].y}`;
+    }
+  }
+  const totalScored=tests.reduce((s,t)=>t.scored!==null?s+parseFloat(t.scored):s,0);
+  const totalMax=tests.reduce((s,t)=>s+parseFloat(t.maxMarks||0),0);
+  return(
+    <div className="mgraph">
+      <div className="mgraph-hd">
+        <div className="mgraph-leg"><div className="mgraph-dot" style={{background:acc}}/><span>Percentage</span></div>
+        {totalMax>0&&<div className="mgraph-tot" style={{color:acc}}>{Math.round(totalScored*100/totalMax)}% &nbsp;<span style={{fontWeight:400,fontSize:9,color:t3}}>({totalScored}/{totalMax})</span></div>}
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:H,display:'block',overflow:'visible'}}>
+        {[0,25,50,75,100].map(g=>(
+          <g key={g}>
+            <line x1={ML} y1={toY(g)} x2={W-MR} y2={toY(g)} stroke={gridC} strokeWidth="1"/>
+            <text x={ML-4} y={toY(g)+3} textAnchor="end" fontSize="7" fill={t3}>{g}</text>
+          </g>
+        ))}
+        {dashD&&<path d={dashD} stroke={acc} strokeWidth="1.5" strokeDasharray="3,3" fill="none" opacity=".5"/>}
+        {solidD&&<path d={solidD} stroke={acc} strokeWidth="1.5" fill="none"/>}
+        {pts.map((p,i)=>p.y===null?null:(
+          <g key={i}>
+            <circle cx={p.x} cy={p.y} r="3" fill={acc}/>
+            <text x={p.x} y={H-MB+14} textAnchor="middle" fontSize="7.5" fill={t3}>{p.name}</text>
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
 function getDashCSS(dark) {
   const d=dark;
   return `
@@ -208,6 +262,11 @@ tbody td{padding:11px 14px;font-size:12px;vertical-align:middle;}
 .mcode{font-size:10px;font-weight:700;color:var(--accent);font-family:'Varela Round',sans-serif;margin-bottom:2px;}
 .mname{font-size:12px;font-weight:600;margin-bottom:2px;}
 .mtype{font-size:9px;color:var(--text3);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em;}
+.mgraph{margin:6px 0 10px;padding:8px 10px;background:var(--surf2);border-radius:8px;border:1px solid var(--border);}
+.mgraph-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.mgraph-leg{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--text3);}
+.mgraph-dot{width:6px;height:6px;border-radius:50%;}
+.mgraph-tot{font-size:11px;font-weight:700;font-family:'Oswald',sans-serif;}
 .trow{display:flex;flex-wrap:wrap;gap:5px;}
 .tpill{background:var(--surf2);border:1px solid var(--border);border-radius:7px;
   padding:6px 9px;text-align:center;flex:1;min-width:52px;max-width:80px;}
@@ -231,15 +290,12 @@ tbody td{padding:11px 14px;font-size:12px;vertical-align:middle;}
 .prow:hover{border-color:var(--bord2);}
 .prow.free{opacity:.3;}
 .pnum{font-size:9px;color:var(--text3);min-width:14px;font-family:'Varela Round',sans-serif;}
-.ptime{font-size:9px;color:var(--text3);font-family:'Varela Round',sans-serif;white-space:nowrap;min-width:95px;}
-.pslot{font-size:8px;font-weight:700;color:var(--accent);
-  background:${d?'rgba(79,141,255,.1)':'rgba(37,99,235,.08)'};
-  border:1px solid ${d?'rgba(79,141,255,.2)':'rgba(37,99,235,.15)'};
-  border-radius:4px;padding:2px 6px;min-width:28px;text-align:center;
-  font-family:'Varela Round',sans-serif;white-space:nowrap;}
-.pname{font-size:12px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ptime{font-size:9px;color:var(--text3);font-family:'Varela Round',sans-serif;white-space:nowrap;min-width:80px;}
+.pname-wrap{flex:1;min-width:0;overflow:hidden;}
+.pname{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pfaculty{font-size:9px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;}
 .proom{font-size:9px;color:var(--text3);font-family:'Varela Round',sans-serif;white-space:nowrap;}
-.ptype{font-size:8px;font-weight:700;padding:2px 6px;border-radius:3px;white-space:nowrap;text-transform:uppercase;}
+.ptype{font-size:8px;font-weight:700;padding:2px 6px;border-radius:3px;white-space:nowrap;text-transform:uppercase;flex-shrink:0;}
 .pt{background:${d?'rgba(79,141,255,.1)':'rgba(37,99,235,.07)'};color:var(--accent);}
 .pp{background:${d?'rgba(34,209,122,.1)':'rgba(5,150,105,.07)'};color:var(--green);}
 
@@ -274,8 +330,9 @@ tbody td{padding:11px 14px;font-size:12px;vertical-align:middle;}
 .hol-row{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);}
 .hol-row:last-child{border-bottom:none;}
 .hol-dt{font-weight:700;color:var(--green);font-size:11px;min-width:52px;white-space:nowrap;padding-top:1px;}
-.hol-nm{color:var(--text);font-size:12px;flex:1;line-height:1.4;}
+.hol-nm{color:var(--text);font-size:12px;line-height:1.4;}
 .hol-empty{font-size:12px;color:var(--text3);padding:8px 0;}
+.hol-badge{font-size:9px;font-weight:700;border-radius:4px;padding:2px 5px;white-space:nowrap;flex-shrink:0;}
 
 /* SKELETON */
 .sk{border-radius:7px;
@@ -419,7 +476,38 @@ function SkeletonDash() {
 }
 
 // -- Calendar ----------------------------------------------------------------
-function Calendar({ dark, onSelectDay, plannerData }) {
+// Classify an event string into a type
+function classifyEvent(event) {
+  if(!event) return 'break';
+  const e=event.toLowerCase();
+  if(e.includes('holiday')) return 'holiday';
+  if(e.includes('last working day')||e.includes('last day of class')) return 'lastday';
+  if(e.includes('first working day')||e.includes('commencement of class')||e.includes('classes commence')||e.includes('reopening')) return 'firstday';
+  if(e.includes('enrollment')||e.includes('enrolment')||e.includes('online enrollment')) return 'enrollment';
+  if(e.includes('exam')||e.includes('cia')||e.includes('assessment')||e.includes('test')) return 'exam';
+  return 'event';
+}
+const ET={
+  holiday:    {color:'var(--green)',  bg:'rgba(34,209,122,.15)',  badge:'HOL', label:'Holiday'},
+  lastday:    {color:'#f59e0b',       bg:'rgba(245,158,11,.15)',  badge:'LWD', label:'Last Working Day'},
+  firstday:   {color:'#14b8a6',       bg:'rgba(20,184,166,.15)',  badge:'FWD', label:'First Working Day'},
+  enrollment: {color:'var(--acc2)',   bg:'rgba(124,92,252,.15)',  badge:'ENR', label:'Enrollment'},
+  exam:       {color:'var(--red)',    bg:'rgba(255,92,92,.15)',   badge:'EXM', label:'Exam'},
+  event:      {color:'#f59e0b',       bg:'rgba(245,158,11,.15)',  badge:'EVT', label:'Event'},
+  break:      {color:'var(--text3)',  bg:'transparent',           badge:null,  label:'No Class'},
+};
+
+// Check if an event is relevant to the student's program
+function isProgramRelevant(event, program) {
+  if(!event||!program) return true;
+  const e=event.toLowerCase(), p=program.toLowerCase();
+  const progs=['b.tech','m.tech','b.arch','m.arch','mba','mca','m.sc','ph.d','btech','mtech'];
+  const mentioned=progs.filter(k=>e.includes(k));
+  if(mentioned.length===0) return true;
+  return mentioned.some(k=>p.replace(/[.\s]/g,'').includes(k.replace(/[.\s]/g,'')));
+}
+
+function Calendar({ dark, onSelectDay, plannerData, program }) {
   const today = new Date();
   const [mo,setMo]=useState(today.getMonth());
   const [yr,setYr]=useState(today.getFullYear());
@@ -429,27 +517,29 @@ function Calendar({ dark, onSelectDay, plannerData }) {
 
   function getPlannerInfo(date) {
     if(!date) return null;
-    const dow = date.getDay();
-    if(dow===0||dow===6) return { order: null, holiday: 'Weekend' };
-    if(!plannerData) {
-      const ord = getDayOrder(date);
-      return { order: ord, holiday: null };
-    }
-    const key = date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
-    const info = plannerData[key];
-    if(!info) return { order: getDayOrder(date), holiday: null };
+    const dow=date.getDay();
+    if(dow===0||dow===6) return {order:null, event:'Weekend', _weekend:true};
+    if(!plannerData) return {order:getDayOrder(date), event:null};
+    const key=date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
+    const info=plannerData[key];
+    if(!info) return {order:getDayOrder(date), event:null};
+    // Backwards-compat: old format used "holiday" field
+    if(info.holiday!==undefined && info.event===undefined)
+      return {order:info.order, event:info.holiday||null};
     return info;
   }
 
-  // Build holiday list for current month (excludes weekends)
-  const monthHolidays = (() => {
+  // All events for current month (excludes weekends and working days with no event)
+  const monthEvents = (() => {
     const result = [];
     const daysInMonth = new Date(yr, mo+1, 0).getDate();
     for(let d=1; d<=daysInMonth; d++) {
       const date = new Date(yr, mo, d);
       const info = getPlannerInfo(date);
-      if(info && info.holiday && info.holiday !== 'Weekend') {
-        result.push({ day: d, date, name: info.holiday });
+      if(!info||info._weekend) continue;
+      // Show: named events (all types), and also working days that have an event
+      if(info.event) {
+        result.push({day:d, date, event:info.event, order:info.order, type:classifyEvent(info.event)});
       }
     }
     return result;
@@ -470,37 +560,59 @@ function Calendar({ dark, onSelectDay, plannerData }) {
             const info=getPlannerInfo(date);
             const isToday=date.toDateString()===today.toDateString();
             const isWeekend=date.getDay()===0||date.getDay()===6;
-            const isHoliday=!info||info.holiday||(!info.order&&!isWeekend);
             const ord=info?info.order:null;
+            const evType=classifyEvent(info?.event);
+            const relevant=isProgramRelevant(info?.event, program);
+            // Determine cell color
+            const numColor=isToday?'var(--accent)':
+              isWeekend?'var(--green)':
+              ord?'var(--text)':
+              info?.event?ET[evType].color:
+              'var(--text3)'; // semester break
+            const titleTxt=info?.event||(ord?'Day '+ord:isWeekend?'Weekend':'No Class');
             return (
               <div key={i} className={'cday'+(isToday?' tod':'')+(ord?' cl':'')}
                 onClick={()=>ord&&onSelectDay&&onSelectDay('Day '+ord)}
-                title={info&&info.holiday?info.holiday:ord?'Day '+ord:isWeekend?'Weekend':'Holiday'}>
-                <span className="cdn" style={{
-                  color:isToday?'var(--accent)':isWeekend||isHoliday?'var(--green)':'var(--text)'
-                }}>{date.getDate()}</span>
+                title={titleTxt}
+                style={!relevant&&info?.event?{opacity:0.45}:{}}>
+                <span className="cdn" style={{color:numColor}}>{date.getDate()}</span>
                 {ord&&<span className="cord" style={{background:'rgba(79,141,255,.15)',color:'var(--accent)'}}>D{ord}</span>}
-                {!ord&&!isWeekend&&isHoliday&&<span className="cord" style={{background:'rgba(34,209,122,.15)',color:'var(--green)',fontSize:6}}>HOL</span>}
+                {!ord&&!isWeekend&&info?.event&&ET[evType].badge&&
+                  <span className="cord" style={{background:ET[evType].bg,color:ET[evType].color,fontSize:6}}>
+                    {ET[evType].badge}
+                  </span>}
               </div>
             );
           })}
         </div>
         <div className="cleg">
-          <div className="cleg-i"><div className="cleg-d" style={{background:'var(--accent)'}}/> Working Day</div>
+          <div className="cleg-i"><div className="cleg-d" style={{background:'var(--accent)'}}/> Class Day</div>
           <div className="cleg-i"><div className="cleg-d" style={{background:'var(--green)'}}/> Holiday</div>
+          <div className="cleg-i"><div className="cleg-d" style={{background:'#f59e0b'}}/> Event/Last Day</div>
+          <div className="cleg-i"><div className="cleg-d" style={{background:'var(--acc2)'}}/> Enrollment</div>
         </div>
       </div>
       <div className="hol-panel">
-        <div className="hol-panel-title">Holidays — {FULL_MON[mo]}</div>
+        <div className="hol-panel-title">Events — {FULL_MON[mo]}</div>
         <div className="hol-scroll">
-          {monthHolidays.length===0
-            ? <div className="hol-empty">No holidays this month</div>
-            : monthHolidays.map(h=>(
-                <div key={h.day} className="hol-row">
-                  <span className="hol-dt">{h.date.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</span>
-                  <span className="hol-nm">{h.name}</span>
-                </div>
-              ))
+          {monthEvents.length===0
+            ? <div className="hol-empty">No events this month</div>
+            : monthEvents.map(ev=>{
+                const rel=isProgramRelevant(ev.event, program);
+                const stripped=ev.event.replace(/\s*-\s*Holiday\s*$/i,'').trim();
+                return (
+                  <div key={ev.day} className="hol-row" style={!rel?{opacity:0.4}:{}}>
+                    <span className="hol-dt">{ev.date.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</span>
+                    <div style={{flex:1,minWidth:0}}>
+                      <span className="hol-nm">{stripped}</span>
+                      {ev.order&&<span style={{fontSize:10,color:'var(--accent)',marginLeft:5}}>· Day {ev.order}</span>}
+                    </div>
+                    <span className="hol-badge" style={{background:ET[ev.type].bg,color:ET[ev.type].color}}>
+                      {ET[ev.type].label}
+                    </span>
+                  </div>
+                );
+              })
           }
         </div>
       </div>
@@ -858,15 +970,18 @@ export default function Dashboard({
                             {attC&&<div className="mname">{attC.name}</div>}
                             <div className="mtype">{m.type}</div>
                             {m.tests.length===0?<div style={{fontSize:11,color:'var(--text3)'}}>No marks yet</div>:(
-                              <div className="trow">
-                                {m.tests.map((t,j)=>(
-                                  <div key={j} className="tpill">
-                                    <div className="tpill-n">{t.name}</div>
-                                    <div className="tpill-s" style={{color:t.scored===null?'var(--red)':'var(--green)'}}>{t.scored===null?'AB':t.scored}</div>
-                                    <div className="tpill-m">/{t.maxMarks}</div>
-                                  </div>
-                                ))}
-                              </div>
+                              <>
+                                <MarksGraph tests={m.tests} dark={dark}/>
+                                <div className="trow">
+                                  {m.tests.map((t,j)=>(
+                                    <div key={j} className="tpill">
+                                      <div className="tpill-n">{t.name}</div>
+                                      <div className="tpill-s" style={{color:t.scored===null?'var(--red)':'var(--green)'}}>{t.scored===null?'AB':t.scored}</div>
+                                      <div className="tpill-m">/{t.maxMarks}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </>
                             )}
                           </div>
                         );
@@ -895,8 +1010,10 @@ export default function Dashboard({
                             <span className="pnum">{p.period}</span>
                             <span className="ptime">{p.time}</span>
                             {p.name?(
-                              <><span className="pslot">{p.slot}</span>
-                              <span className="pname">{p.name}</span>
+                              <><div className="pname-wrap">
+                                <span className="pname">{p.name}</span>
+                                {p.faculty&&<span className="pfaculty">{p.faculty}</span>}
+                              </div>
                               <span className="proom">{p.room}</span>
                               <span className={'ptype '+(p.type==='Practical'?'pp':'pt')}>{p.type}</span></>
                             ):<span style={{fontSize:12,color:'var(--text3)',flex:1,fontStyle:'italic'}}>Free</span>}
@@ -914,7 +1031,7 @@ export default function Dashboard({
                   <div className="seclbl">
                     Academic Calendar
                   </div>
-                  <Calendar dark={dark} onSelectDay={d=>{setActiveDay(d);goTab('timetable');}} plannerData={plannerData}/>
+                  <Calendar dark={dark} onSelectDay={d=>{setActiveDay(d);goTab('timetable');}} plannerData={plannerData} program={student.program}/>
                   {!plannerData&&<p style={{marginTop:8,fontSize:11,color:'var(--text3)',padding:'8px 12px',background:'var(--surf2)',borderRadius:7,border:'1px solid var(--border)'}}>
                     Calendar showing calculated day orders. Log in again to load official planner data.
                   </p>}
