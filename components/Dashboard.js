@@ -164,6 +164,18 @@ input,button,select{font-family:inherit;}
 .btn-sm{padding:5px 12px;background:transparent;border:1px solid var(--border);
   border-radius:7px;color:var(--text2);font-size:12px;cursor:pointer;transition:all .15s;}
 .btn-sm:hover{border-color:var(--accent);color:var(--accent);}
+.live-ind{display:flex;align-items:center;gap:4px;}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;
+  box-shadow:0 0 5px var(--green);}
+.live-lbl{font-size:10px;font-weight:700;color:var(--green);font-family:'Varela Round',sans-serif;letter-spacing:.03em;}
+.live-time{font-size:10px;color:var(--text3);font-family:'Varela Round',sans-serif;}
+.btn-refresh{display:flex;align-items:center;gap:5px;padding:5px 11px;
+  background:var(--surf2);border:1px solid var(--border);border-radius:7px;
+  color:var(--text2);font-size:11px;font-weight:500;cursor:pointer;white-space:nowrap;
+  transition:all .15s;}
+.btn-refresh:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+.btn-refresh:disabled{opacity:.45;cursor:not-allowed;}
+@media(max-width:500px){.live-lbl,.live-time{display:none;}.today-badge{display:none;}}
 
 /* DESKBAR */
 .deskbar{display:flex;align-items:center;gap:1px;padding:0 clamp(12px,3vw,28px);
@@ -716,13 +728,9 @@ function LoginProgress({steps,startTime,dark}){
 }
 
 // -- Main Dashboard export ----------------------------------------------------
-function timeAgo(ts) {
+function formatUpdTime(ts) {
   if (!ts) return '';
-  const diff = Math.floor((Date.now() - ts) / 1000);
-  if (diff < 60)  return 'just now';
-  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
-  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
-  return Math.floor(diff / 86400) + 'd ago';
+  return new Date(ts).toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit', hour12:true});
 }
 
 export default function Dashboard({
@@ -755,9 +763,6 @@ export default function Dashboard({
   },[data]);
   useEffect(()=>{if(loading)setLoginStartTime(Date.now());},[loading]);
 
-  // Ticker: re-render every minute so "X min ago" label stays current
-  const [,setTick]=useState(0);
-  useEffect(()=>{const t=setInterval(()=>setTick(n=>n+1),60000);return()=>clearInterval(t);},[]);
 
   function goTab(t){setTab(t);}
 
@@ -889,10 +894,27 @@ export default function Dashboard({
                 {todayOrd?'Day '+todayOrd:todayEvent||'Holiday'} · Today
               </div>
             )}
-            {lastUpdatedTs>0&&<span style={{fontSize:9,color:'var(--text3)',whiteSpace:'nowrap'}}>{timeAgo(lastUpdatedTs)}</span>}
-            <button className="ibt" onClick={onManualRefresh} disabled={dataLoading} title="Refresh data from SRM portal"
-              style={{fontSize:16,lineHeight:1,transition:'opacity .2s',opacity:dataLoading?.5:1}}>
-              <span style={dataLoading?{display:'inline-block',animation:'spin .7s linear infinite'}:{}}>{dataLoading?'↻':'↻'}</span>
+            {/* Live indicator */}
+            {lastUpdatedTs>0&&(
+              <div className="live-ind">
+                {dataLoading?(
+                  <>
+                    <span style={{display:'inline-block',animation:'spin .7s linear infinite',fontSize:13,color:'var(--accent)'}}>↻</span>
+                    <span className="live-time">Updating...</span>
+                  </>
+                ):(
+                  <>
+                    <div className="live-dot"/>
+                    <span className="live-lbl">Live</span>
+                    <span className="live-time">{formatUpdTime(lastUpdatedTs)}</span>
+                  </>
+                )}
+              </div>
+            )}
+            {/* Refresh button */}
+            <button className="btn-refresh" onClick={onManualRefresh} disabled={dataLoading} title="Refresh data from SRM portal">
+              <span style={dataLoading?{display:'inline-block',animation:'spin .7s linear infinite'}:{}}>↻</span>
+              <span>Refresh</span>
             </button>
             <button className="ibt" onClick={()=>setDark(d=>!d)}>{dark?'☀':'☾'}</button>
             <button className="btn-sm" onClick={logout}>Sign out</button>

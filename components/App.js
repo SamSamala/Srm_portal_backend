@@ -99,7 +99,13 @@ export default function App() {
         setView('login');
       } else if (freshData) {
         setData(freshData);
-        saveDataCache(freshData);
+        if (forceRefresh) {
+          // Manual refresh: update data + timestamp
+          saveDataCache(freshData);
+        } else {
+          // Silent background refresh: update data in storage but keep original timestamp
+          try { localStorage.setItem(LS_DATA_KEY, JSON.stringify(freshData)); } catch(e) {}
+        }
       }
     }
   }
