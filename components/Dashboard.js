@@ -244,6 +244,9 @@ tbody td{padding:11px 14px;font-size:12px;vertical-align:middle;}
 .pp{background:${d?'rgba(34,209,122,.1)':'rgba(5,150,105,.07)'};color:var(--green);}
 
 /* CALENDAR */
+.cal-outer{display:flex;flex-direction:column;gap:12px;width:100%;}
+@media(min-width:700px){.cal-outer{flex-direction:row;align-items:flex-start;gap:16px;}
+.cwrap{flex:0 0 auto;width:min(100%,340px);}}
 .cwrap{background:var(--surf);border:1px solid var(--border);border-radius:13px;padding:16px;}
 .cnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
 .ctit{font-family:'Playfair Display',serif;font-size:14px;font-weight:700;}
@@ -263,6 +266,16 @@ tbody td{padding:11px 14px;font-size:12px;vertical-align:middle;}
 .cleg{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:11px;border-top:1px solid var(--border);}
 .cleg-i{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3);}
 .cleg-d{width:7px;height:7px;border-radius:2px;flex-shrink:0;}
+.hol-panel{flex:1;min-width:0;background:var(--surf);border:1px solid var(--border);border-radius:13px;padding:14px 14px 8px;}
+.hol-panel-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;}
+.hol-scroll{max-height:280px;overflow-y:auto;}
+.hol-scroll::-webkit-scrollbar{width:3px;}
+.hol-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.hol-row{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);}
+.hol-row:last-child{border-bottom:none;}
+.hol-dt{font-weight:700;color:var(--green);font-size:11px;min-width:52px;white-space:nowrap;padding-top:1px;}
+.hol-nm{color:var(--text);font-size:12px;flex:1;line-height:1.4;}
+.hol-empty{font-size:12px;color:var(--text3);padding:8px 0;}
 
 /* SKELETON */
 .sk{border-radius:7px;
@@ -411,18 +424,14 @@ function Calendar({ dark, onSelectDay, plannerData }) {
   const [mo,setMo]=useState(today.getMonth());
   const [yr,setYr]=useState(today.getFullYear());
   const days=getMonthDays(yr,mo);
-  const OC=dark?OC_DARK:OC_LIGHT;
   const prev=()=>{if(mo===0){setMo(11);setYr(y=>y-1);}else setMo(m=>m-1);};
   const next=()=>{if(mo===11){setMo(0);setYr(y=>y+1);}else setMo(m=>m+1);};
 
-  // Get planner info for a date: {do: dayOrder|null, holiday: string|null}
   function getPlannerInfo(date) {
     if(!date) return null;
     const dow = date.getDay();
-    // Sat(6) and Sun(0) are holidays
     if(dow===0||dow===6) return { order: null, holiday: 'Weekend' };
     if(!plannerData) {
-      // Fallback to calculated day order
       const ord = getDayOrder(date);
       return { order: ord, holiday: null };
     }
@@ -432,43 +441,68 @@ function Calendar({ dark, onSelectDay, plannerData }) {
     return info;
   }
 
+  // Build holiday list for current month (excludes weekends)
+  const monthHolidays = (() => {
+    const result = [];
+    const daysInMonth = new Date(yr, mo+1, 0).getDate();
+    for(let d=1; d<=daysInMonth; d++) {
+      const date = new Date(yr, mo, d);
+      const info = getPlannerInfo(date);
+      if(info && info.holiday && info.holiday !== 'Weekend') {
+        result.push({ day: d, date, name: info.holiday });
+      }
+    }
+    return result;
+  })();
+
   return (
-    <div className="cwrap">
-      <div className="cnav">
-        <button className="cbtn" onClick={prev}>‹</button>
-        <span className="ctit">{FULL_MON[mo]} {yr}</span>
-        <button className="cbtn" onClick={next}>›</button>
+    <div className="cal-outer">
+      <div className="cwrap">
+        <div className="cnav">
+          <button className="cbtn" onClick={prev}>‹</button>
+          <span className="ctit">{FULL_MON[mo]} {yr}</span>
+          <button className="cbtn" onClick={next}>›</button>
+        </div>
+        <div className="cgrid">
+          {DOW_SHORT.map(d=><div key={d} className="cdow">{d}</div>)}
+          {days.map((date,i)=>{
+            if(!date)return<div key={i}/>;
+            const info=getPlannerInfo(date);
+            const isToday=date.toDateString()===today.toDateString();
+            const isWeekend=date.getDay()===0||date.getDay()===6;
+            const isHoliday=!info||info.holiday||(!info.order&&!isWeekend);
+            const ord=info?info.order:null;
+            return (
+              <div key={i} className={'cday'+(isToday?' tod':'')+(ord?' cl':'')}
+                onClick={()=>ord&&onSelectDay&&onSelectDay('Day '+ord)}
+                title={info&&info.holiday?info.holiday:ord?'Day '+ord:isWeekend?'Weekend':'Holiday'}>
+                <span className="cdn" style={{
+                  color:isToday?'var(--accent)':isWeekend||isHoliday?'var(--green)':'var(--text)'
+                }}>{date.getDate()}</span>
+                {ord&&<span className="cord" style={{background:'rgba(79,141,255,.15)',color:'var(--accent)'}}>D{ord}</span>}
+                {!ord&&!isWeekend&&isHoliday&&<span className="cord" style={{background:'rgba(34,209,122,.15)',color:'var(--green)',fontSize:6}}>HOL</span>}
+              </div>
+            );
+          })}
+        </div>
+        <div className="cleg">
+          <div className="cleg-i"><div className="cleg-d" style={{background:'var(--accent)'}}/> Working Day</div>
+          <div className="cleg-i"><div className="cleg-d" style={{background:'var(--green)'}}/> Holiday</div>
+        </div>
       </div>
-      <div className="cgrid">
-        {DOW_SHORT.map(d=><div key={d} className="cdow">{d}</div>)}
-        {days.map((date,i)=>{
-          if(!date)return<div key={i}/>;
-          const info=getPlannerInfo(date);
-          const isToday=date.toDateString()===today.toDateString();
-          const isHoliday=!info||info.holiday||(!info.order&&date.getDay()!==0&&date.getDay()!==6);
-          const isWeekend=date.getDay()===0||date.getDay()===6;
-          const ord=info?info.order:null;
-          const col=ord?OC[ord]:(isWeekend||isHoliday)?'var(--green)':null;
-          return (
-            <div key={i} className={'cday'+(isToday?' tod':'')+(ord?' cl':'')}
-              onClick={()=>ord&&onSelectDay&&onSelectDay('Day '+ord)}
-              title={info&&info.holiday?info.holiday:ord?'Day '+ord:isWeekend?'Weekend':'Holiday'}>
-              <span className="cdn" style={{
-                color:isToday?'var(--accent)':isWeekend||isHoliday?'var(--green)':'var(--text)'
-              }}>{date.getDate()}</span>
-              {ord&&<span className="cord" style={{background:col+'22',color:col}}>D{ord}</span>}
-              {!ord&&!isWeekend&&isHoliday&&<span className="cord" style={{background:'rgba(34,209,122,.15)',color:'var(--green)',fontSize:6}}>HOL</span>}
-            </div>
-          );
-        })}
-      </div>
-      <div className="cleg">
-        {[1,2,3,4,5].map(n=>(
-          <div key={n} className="cleg-i">
-            <div className="cleg-d" style={{background:(dark?OC_DARK:OC_LIGHT)[n]}}/> Day {n}
-          </div>
-        ))}
-        <div className="cleg-i"><div className="cleg-d" style={{background:'var(--green)'}}/> Holiday</div>
+      <div className="hol-panel">
+        <div className="hol-panel-title">Holidays — {FULL_MON[mo]}</div>
+        <div className="hol-scroll">
+          {monthHolidays.length===0
+            ? <div className="hol-empty">No holidays this month</div>
+            : monthHolidays.map(h=>(
+                <div key={h.day} className="hol-row">
+                  <span className="hol-dt">{h.date.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</span>
+                  <span className="hol-nm">{h.name}</span>
+                </div>
+              ))
+          }
+        </div>
       </div>
     </div>
   );
@@ -880,9 +914,7 @@ export default function Dashboard({
                   <div className="seclbl">
                     Academic Calendar
                   </div>
-                  <div style={{maxWidth:440}}>
-                    <Calendar dark={dark} onSelectDay={d=>{setActiveDay(d);goTab('timetable');}} plannerData={plannerData}/>
-                  </div>
+                  <Calendar dark={dark} onSelectDay={d=>{setActiveDay(d);goTab('timetable');}} plannerData={plannerData}/>
                   {!plannerData&&<p style={{marginTop:8,fontSize:11,color:'var(--text3)',padding:'8px 12px',background:'var(--surf2)',borderRadius:7,border:'1px solid var(--border)'}}>
                     Calendar showing calculated day orders. Log in again to load official planner data.
                   </p>}
