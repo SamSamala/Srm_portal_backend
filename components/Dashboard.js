@@ -716,6 +716,15 @@ function LoginProgress({steps,startTime,dark}){
 }
 
 // -- Main Dashboard export ----------------------------------------------------
+function timeAgo(ts) {
+  if (!ts) return '';
+  const diff = Math.floor((Date.now() - ts) / 1000);
+  if (diff < 60)  return 'just now';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  return Math.floor(diff / 86400) + 'd ago';
+}
+
 export default function Dashboard({
   dark, setDark,
   view, setView,
@@ -731,6 +740,7 @@ export default function Dashboard({
   showPass, setShowPass,
   dataLoading, setDataLoading,
   handleLogin, handleCaptcha, logout,
+  lastUpdatedTs, onManualRefresh,
 }) {
   const [tab,setTab]=useState('dashboard');
   const [activeDay,setActiveDay]=useState('Day 1');
@@ -744,6 +754,10 @@ export default function Dashboard({
     if(data.plannerData) setPlannerData(data.plannerData);
   },[data]);
   useEffect(()=>{if(loading)setLoginStartTime(Date.now());},[loading]);
+
+  // Ticker: re-render every minute so "X min ago" label stays current
+  const [,setTick]=useState(0);
+  useEffect(()=>{const t=setInterval(()=>setTick(n=>n+1),60000);return()=>clearInterval(t);},[]);
 
   function goTab(t){setTab(t);}
 
@@ -875,7 +889,11 @@ export default function Dashboard({
                 {todayOrd?'Day '+todayOrd:todayEvent||'Holiday'} · Today
               </div>
             )}
-            {dataLoading&&<div style={{width:14,height:14,borderRadius:'50%',border:'2px solid var(--border)',borderTopColor:'var(--accent)',animation:'spin .7s linear infinite'}}/>}
+            {lastUpdatedTs>0&&<span style={{fontSize:9,color:'var(--text3)',whiteSpace:'nowrap'}}>{timeAgo(lastUpdatedTs)}</span>}
+            <button className="ibt" onClick={onManualRefresh} disabled={dataLoading} title="Refresh data from SRM portal"
+              style={{fontSize:16,lineHeight:1,transition:'opacity .2s',opacity:dataLoading?.5:1}}>
+              <span style={dataLoading?{display:'inline-block',animation:'spin .7s linear infinite'}:{}}>{dataLoading?'↻':'↻'}</span>
+            </button>
             <button className="ibt" onClick={()=>setDark(d=>!d)}>{dark?'☀':'☾'}</button>
             <button className="btn-sm" onClick={logout}>Sign out</button>
           </div>
@@ -892,7 +910,7 @@ export default function Dashboard({
 
         {/* PAGE */}
         <div className="page page-bot" key={tab}>
-          {dataLoading?<SkeletonDash/>:(
+          {dataLoading&&!data?<SkeletonDash/>:(
             <>
               {/* DASHBOARD TAB */}
               {tab==='dashboard'&&(

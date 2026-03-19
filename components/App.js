@@ -3,6 +3,10 @@ import Landing from './Landing';
 import Dashboard from './Dashboard';
 import { getDayOrder } from './Dashboard';
 
+const LS_DATA_KEY  = 'srm_data_cache';
+const LS_DATA_TIME = 'srm_data_cache_ts';
+const LS_CACHE_MAX_AGE = 4 * 60 * 60 * 1000; // 4 hours
+
 export default function App() {
   const [dark, setDark] = useState(false);
   const [view,        setView]        = useState('loading');
@@ -17,22 +21,81 @@ export default function App() {
   const [savedToken,  setSavedToken]  = useState('');
   const [showPass,    setShowPass]    = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
+  const [lastUpdatedTs, setLastUpdatedTs] = useState(0);
 
-  // On mount: check for saved session
+  function saveDataCache(jsonData) {
+    try {
+      const now = Date.now();
+      localStorage.setItem(LS_DATA_KEY, JSON.stringify(jsonData));
+      localStorage.setItem(LS_DATA_TIME, String(now));
+      setLastUpdatedTs(now);
+    } catch(e) {}
+  }
+
+  // On mount: check for saved session + localStorage data cache
   useEffect(() => {
     const token      = localStorage.getItem('srm_session_token');
     const savedEmail = localStorage.getItem('srm_session_email');
 
-    if (token && savedEmail) {
-      setSavedToken(token);
-      setEmail(savedEmail);
-      autoLogin(savedEmail, token);
-    } else {
-      setView('landing');
+    if (!token || !savedEmail) { setView('landing'); return; }
+
+    setSavedToken(token);
+    setEmail(savedEmail);
+
+    // Try to show cached data immediately (instant display)
+    const cachedRaw = localStorage.getItem(LS_DATA_KEY);
+    const cachedTs  = parseInt(localStorage.getItem(LS_DATA_TIME) || '0');
+
+    if (cachedRaw && (Date.now() - cachedTs) < LS_CACHE_MAX_AGE) {
+      try {
+        setData(JSON.parse(cachedRaw));
+        setLastUpdatedTs(cachedTs);
+        setView('dashboard');
+        // Silently refresh in background (no spinner)
+        backgroundRefresh(savedEmail, token, false);
+        return;
+      } catch(e) {}
     }
+
+    // No usable cache — normal auto-login with spinner
+    autoLogin(savedEmail, token);
   }, []);
 
-  // Auto-login with saved session token
+  // Background refresh (silent — keeps showing existing data while fetching)
+  async function backgroundRefresh(emailArg, token, forceRefresh) {
+    setDataLoading(true);
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 270000);
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailArg, password: null, sessionToken: token, forceRefresh }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      const json = await res.json();
+
+      if (res.status === 401 || json.error === 'session_expired') {
+        localStorage.removeItem('srm_session_token');
+        localStorage.removeItem('srm_session_email');
+        localStorage.removeItem(LS_DATA_KEY);
+        localStorage.removeItem(LS_DATA_TIME);
+        setSavedToken('');
+        setData(null);
+        setView('login');
+      } else if (res.ok && json.data) {
+        setData(json.data);
+        saveDataCache(json.data);
+      }
+      // On network/timeout error: keep showing existing data silently
+    } catch(e) {}
+    finally {
+      setDataLoading(false);
+    }
+  }
+
+  // Auto-login with saved session token (shows spinner — used when no cache)
   async function autoLogin(emailArg, token) {
     try {
       setLoading(true);
@@ -52,6 +115,7 @@ export default function App() {
 
       if (res.ok && json.data && !json.needsCaptcha) {
         setData(json.data);
+        saveDataCache(json.data);
         setView('dashboard');
       } else if (res.status === 401 || json.error === 'session_expired') {
         localStorage.removeItem('srm_session_token');
@@ -100,6 +164,7 @@ export default function App() {
           setSavedToken(json.sessionToken);
         }
         setData(json.data);
+        saveDataCache(json.data);
         setView('dashboard');
       }
     } catch (err) {
@@ -136,6 +201,7 @@ export default function App() {
           setSavedToken(json.sessionToken);
         }
         setData(json.data);
+        saveDataCache(json.data);
         setView('dashboard');
       }
     } catch (err) {
@@ -149,6 +215,8 @@ export default function App() {
   async function logout() {
     localStorage.removeItem('srm_session_token');
     localStorage.removeItem('srm_session_email');
+    localStorage.removeItem(LS_DATA_KEY);
+    localStorage.removeItem(LS_DATA_TIME);
     setSavedToken('');
     try {
       await fetch('/api/logout', {
@@ -160,6 +228,7 @@ export default function App() {
     setData(null);
     setEmail('');
     setPass('');
+    setLastUpdatedTs(0);
     setView('landing');
   }
 
@@ -178,6 +247,8 @@ export default function App() {
     showPass, setShowPass,
     dataLoading, setDataLoading,
     handleLogin, handleCaptcha, logout,
+    lastUpdatedTs,
+    onManualRefresh: () => backgroundRefresh(email, savedToken, true),
   };
 
   // Checking session (instant — only shows during useEffect)

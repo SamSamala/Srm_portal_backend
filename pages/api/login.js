@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { email, password, sessionToken } = req.body || {};
+  const { email, password, sessionToken, forceRefresh } = req.body || {};
 
   if (!email) {
     return res.status(400).json({ error: 'Email required' });
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
   if (sessionToken && sessionToken === expectedToken) {
     try {
       const result = await Promise.race([
-        startLogin(email, null, true),
+        startLogin(email, null, true, !!forceRefresh),
         new Promise((_, reject) =>
           setTimeout(() => reject(new Error('timeout')), 250000)
         )
