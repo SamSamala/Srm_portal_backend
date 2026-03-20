@@ -33,6 +33,7 @@ export default function App() {
   }
 
   // Persist dark mode preference
+  //hi
   useEffect(() => { localStorage.setItem('srm_dark', dark ? '1' : '0'); }, [dark]);
 
   // On mount: check for saved session + localStorage data cache
