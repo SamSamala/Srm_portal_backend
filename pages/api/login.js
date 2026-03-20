@@ -1,4 +1,4 @@
-const { startLogin } = require('../../lib/scraper');
+const { startLogin, trackUser } = require('../../lib/scraper');
 
 export const config = {
   api: {
@@ -30,6 +30,7 @@ export default async function handler(req, res) {
           setTimeout(() => reject(new Error('timeout')), 250000)
         )
       ]);
+      if (result.data) await trackUser(email);
       return res.status(200).json(result);
     } catch (e) {
       res.setHeader('Set-Cookie', 'sessionId=; Max-Age=0; Path=/');
@@ -53,6 +54,7 @@ export default async function handler(req, res) {
         `sessionId=${sessionId}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=86400`
       );
       result.sessionToken = sessionId;
+      if (result.data) await trackUser(email);
     }
 
     return res.status(200).json(result);
