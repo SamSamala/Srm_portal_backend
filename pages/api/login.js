@@ -53,8 +53,13 @@ export default async function handler(req, res) {
       if (result.data) await trackUser(email);
       return res.status(200).json(result);
     } catch (e) {
-      res.setHeader('Set-Cookie', 'sessionId=; Max-Age=0; Path=/');
-      return res.status(401).json({ error: 'session_expired' });
+      // Only clear the session cookie for genuine auth failures, not scrape errors.
+      // A scrape failure (portal slow/down) should not log the user out.
+      if (!e.isScrapeFailure) {
+        res.setHeader('Set-Cookie', 'sessionId=; Max-Age=0; Path=/');
+        return res.status(401).json({ error: 'session_expired' });
+      }
+      return res.status(503).json({ error: 'refresh_failed', message: e.message });
     }
   }
 
