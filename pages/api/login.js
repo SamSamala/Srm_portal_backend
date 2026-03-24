@@ -32,8 +32,10 @@ export default async function handler(req, res) {
   }
 
   const { startLogin, trackUser } = require('../../lib/scraper');
+  const db = require('../../lib/db');
+  const { decrypt } = require('../../lib/crypto');
 
-  const { email, password, sessionToken, forceRefresh } = req.body || {};
+  const { email, password, sessionToken, forceRefresh, remember_token } = req.body || {};
 
   if (!email) {
     return res.status(400).json({ error: 'Email required' });
@@ -53,13 +55,43 @@ export default async function handler(req, res) {
       if (result.data) await trackUser(email);
       return res.status(200).json(result);
     } catch (e) {
-      // Only clear the session cookie for genuine auth failures, not scrape errors.
-      // A scrape failure (portal slow/down) should not log the user out.
-      if (!e.isScrapeFailure) {
-        res.setHeader('Set-Cookie', 'sessionId=; Max-Age=0; Path=/');
-        return res.status(401).json({ error: 'session_expired' });
+      // Scrape failure (portal slow/down) — keep user logged in, return cached data
+      if (e.isScrapeFailure) {
+        return res.status(503).json({ error: 'refresh_failed', message: e.message });
       }
-      return res.status(503).json({ error: 'refresh_failed', message: e.message });
+
+      // Session truly expired — attempt silent re-login with saved credentials
+      if (remember_token) {
+        try {
+          const row = await db.getCredsForToken(remember_token);
+          if (row) {
+            const creds = JSON.parse(decrypt(row.encrypted_creds));
+            const result = await Promise.race([
+              startLogin(creds.email, creds.password, false),
+              new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('timeout')), 250000)
+              )
+            ]);
+            if (!result.needsCaptcha && result.data) {
+              const newSessionId = Buffer.from(creds.email).toString('base64');
+              res.setHeader(
+                'Set-Cookie',
+                `sessionId=${newSessionId}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=86400`
+              );
+              result.sessionToken = newSessionId;
+              result.auto_relogged = true;
+              await trackUser(creds.email);
+              return res.status(200).json(result);
+            }
+          }
+        } catch (reloginErr) {
+          console.warn('[auto-relogin] failed:', reloginErr.message);
+        }
+      }
+
+      // No saved creds or re-login failed — now it's safe to log out
+      res.setHeader('Set-Cookie', 'sessionId=; Max-Age=0; Path=/');
+      return res.status(401).json({ error: 'session_expired' });
     }
   }
 
