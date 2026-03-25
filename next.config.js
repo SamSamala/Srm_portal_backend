@@ -2,7 +2,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async rewrites() {
-    const backend = process.env.BACKEND_URL;
+    const backend = (process.env.BACKEND_URL || '').replace(/\/+$/, '');
     if (!backend) return { beforeFiles: [] };
     return {
       beforeFiles: [
