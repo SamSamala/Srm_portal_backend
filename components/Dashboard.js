@@ -880,7 +880,7 @@ export default function Dashboard({
     if(!semFilter)setSemFilter(data.student.semester||'');
   },[data]);
 
-  function goTab(t){setTab(t);}
+  function goTab(t){if(t==='internships'&&!isPro){onUpgrade?.();return;}setTab(t);}
 
   const att=data?.attendance||[], marks=data?.marks||[];
   const tt=Array.isArray(data?.timetable)?data.timetable:[];

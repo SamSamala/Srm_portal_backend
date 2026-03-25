@@ -448,7 +448,7 @@ function UpgradeModal({ dark, onClose, onPay }) {
           Internship listings are a <strong style={{color:text}}>Pro</strong> feature. Get full access to all available openings for just <strong style={{color:'#4f8dff'}}>₹50/month</strong>.
         </div>
         <ul style={{listStyle:'none',padding:0,margin:'0 0 22px',display:'flex',flexDirection:'column',gap:8}}>
-          {['Browse all internship listings','Filter by department & semester','Apply directly from the app','New openings added regularly'].map(f=>(
+          {['Browse all internship listings','New openings added regularly'].map(f=>(
             <li key={f} style={{display:'flex',alignItems:'center',gap:10,fontSize:13,color:text2}}>
               <span style={{color:'#22d17a',fontWeight:700,fontSize:16,lineHeight:1}}>✓</span>{f}
             </li>
