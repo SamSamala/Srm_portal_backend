@@ -58,60 +58,130 @@ const EMPTY_FORM = {
 function css(dark) {
   return `
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'Inter',sans-serif;background:${dark?'#0d0d0d':'#f5f5f5'};color:${dark?'#e8e8e8':'#111'};min-height:100vh;}
-  .wrap{max-width:900px;margin:0 auto;padding:24px 16px;}
-  .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:10px;flex-wrap:wrap;}
-  .logo{font-size:20px;font-weight:800;letter-spacing:-.3px;}
+  body{font-family:'Inter',sans-serif;background:${dark?'#0a0a0a':'#f4f4f6'};color:${dark?'#e8e8e8':'#111'};min-height:100vh;}
+  .wrap{max-width:1100px;margin:0 auto;padding:28px 20px;}
+  @media(max-width:768px){.wrap{padding:16px 12px;}}
+
+  /* TOP BAR */
+  .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;gap:12px;flex-wrap:wrap;}
+  .logo{font-size:22px;font-weight:800;letter-spacing:-.4px;}
   .logo span{color:#4f8dff;}
-  h2{font-size:18px;font-weight:700;margin-bottom:16px;}
-  .btn{padding:9px 16px;border-radius:9px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:opacity .15s;}
-  .btn:hover{opacity:.85;}
-  .btn:disabled{opacity:.5;cursor:not-allowed;}
-  .btn-p{background:#4f8dff;color:#fff;}
-  .btn-g{background:${dark?'#222':'#e8e8e8'};color:${dark?'#ccc':'#444'};}
-  .btn-r{background:#ff5c5c;color:#fff;}
-  .btn-sm{padding:6px 12px;font-size:12px;}
-  .card{background:${dark?'#141414':'#fff'};border:1px solid ${dark?'#222':'#e0e0e0'};border-radius:14px;padding:20px;}
+  .top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  @media(max-width:520px){.top{flex-direction:column;align-items:flex-start;}.top-actions{width:100%;}}
+
+  /* HEADINGS */
+  h2{font-size:17px;font-weight:700;margin-bottom:16px;}
+
+  /* BUTTONS */
+  .btn{padding:9px 18px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s;white-space:nowrap;}
+  .btn:hover{opacity:.85;transform:translateY(-1px);}
+  .btn:active{transform:translateY(0);}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+  .btn-p{background:linear-gradient(135deg,#4f8dff,#3a6fd8);color:#fff;box-shadow:0 2px 8px rgba(79,141,255,.3);}
+  .btn-g{background:${dark?'#1e1e1e':'#ebebeb'};color:${dark?'#bbb':'#444'};border:1px solid ${dark?'#2a2a2a':'#ddd'};}
+  .btn-r{background:linear-gradient(135deg,#ff5c5c,#e03a3a);color:#fff;box-shadow:0 2px 8px rgba(255,92,92,.25);}
+  .btn-sm{padding:6px 13px;font-size:12px;}
+  .btn-xs{padding:4px 10px;font-size:11px;border-radius:7px;}
+
+  /* STAT CARDS */
+  .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;}
+  @media(max-width:640px){.stats-grid{grid-template-columns:1fr 1fr;}}
+  @media(max-width:380px){.stats-grid{grid-template-columns:1fr;}}
+  .stat-card{background:${dark?'#111':'#fff'};border:1px solid ${dark?'#1e1e1e':'#e0e0e0'};border-radius:14px;padding:18px 16px;cursor:pointer;transition:border-color .2s,transform .15s;}
+  .stat-card:hover{border-color:#4f8dff44;transform:translateY(-2px);}
+  .stat-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:${dark?'#555':'#999'};margin-bottom:8px;}
+  .stat-val{font-size:30px;font-weight:800;font-family:monospace;line-height:1;}
+  .stat-sub{font-size:11px;color:${dark?'#444':'#aaa'};margin-top:5px;}
+
+  /* CARD */
+  .card{background:${dark?'#111':'#fff'};border:1px solid ${dark?'#1e1e1e':'#e0e0e0'};border-radius:14px;padding:20px;}
+
+  /* FORM FIELDS */
   .field{margin-bottom:14px;}
-  .field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:${dark?'#888':'#666'};margin-bottom:5px;}
-  .field input,.field textarea,.field select{width:100%;background:${dark?'#1a1a1a':'#f9f9f9'};border:1px solid ${dark?'#2a2a2a':'#e0e0e0'};
-    border-radius:8px;padding:9px 11px;color:${dark?'#e0e0e0':'#111'};font-size:13px;outline:none;font-family:inherit;}
-  .field input:focus,.field textarea:focus{border-color:#4f8dff;}
+  .field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:${dark?'#666':'#888'};margin-bottom:5px;}
+  .field input,.field textarea,.field select{width:100%;background:${dark?'#161616':'#fafafa'};border:1px solid ${dark?'#252525':'#e0e0e0'};
+    border-radius:9px;padding:9px 12px;color:${dark?'#e0e0e0':'#111'};font-size:13px;outline:none;font-family:inherit;transition:border-color .15s;}
+  .field input:focus,.field textarea:focus,.field select:focus{border-color:#4f8dff;background:${dark?'#1a1a1a':'#fff'};}
   .field textarea{resize:vertical;min-height:80px;}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-  @media(max-width:600px){.row{grid-template-columns:1fr;}}
+  @media(max-width:560px){.row{grid-template-columns:1fr;}}
   .check-group{display:flex;flex-wrap:wrap;gap:6px;}
-  .check-item{display:flex;align-items:center;gap:5px;background:${dark?'#1a1a1a':'#f2f2f2'};
-    border:1px solid ${dark?'#2a2a2a':'#e0e0e0'};border-radius:7px;padding:4px 9px;cursor:pointer;font-size:12px;}
+  .check-item{display:flex;align-items:center;gap:5px;background:${dark?'#161616':'#f2f2f2'};
+    border:1px solid ${dark?'#252525':'#e0e0e0'};border-radius:7px;padding:5px 10px;cursor:pointer;font-size:12px;transition:all .15s;}
   .check-item input{width:auto;margin:0;}
   .check-item.on{background:rgba(79,141,255,.12);border-color:rgba(79,141,255,.4);color:#4f8dff;}
-  .intern-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
-    padding:14px 16px;background:${dark?'#141414':'#fff'};border:1px solid ${dark?'#222':'#e5e5e5'};
-    border-radius:12px;margin-bottom:8px;}
-  .intern-title{font-size:14px;font-weight:700;margin-bottom:2px;}
-  .intern-meta{font-size:11px;color:${dark?'#888':'#888'};}
-  .intern-actions{display:flex;gap:6px;flex-shrink:0;}
-  .empty{text-align:center;color:${dark?'#555':'#aaa'};padding:32px;font-size:13px;}
-  .err{color:#ff5c5c;font-size:13px;margin-bottom:10px;}
-  .import-status{font-size:12px;color:#4f8dff;margin-top:4px;}
-  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);
-    display:flex;align-items:center;justify-content:center;padding:16px;z-index:100;}
-  .modal-box{background:${dark?'#141414':'#fff'};border:1px solid ${dark?'#222':'#e0e0e0'};
-    border-radius:18px;padding:24px;max-width:620px;width:100%;max-height:90vh;overflow-y:auto;}
-  .modal-title{font-size:17px;font-weight:700;margin-bottom:18px;}
-  .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
-  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;}
-  .login-card{background:${dark?'#141414':'#fff'};border:1px solid ${dark?'#222':'#e0e0e0'};
-    border-radius:18px;padding:32px 28px;max-width:360px;width:100%;}
-  .login-title{font-size:22px;font-weight:800;margin-bottom:4px;}
-  .login-sub{font-size:13px;color:${dark?'#666':'#888'};margin-bottom:24px;}
-  .section-tabs{display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid ${dark?'#222':'#e0e0e0'};padding-bottom:12px;flex-wrap:wrap;}
-  .stab{padding:7px 16px;border-radius:8px;border:none;background:transparent;color:${dark?'#888':'#666'};font-size:13px;font-weight:600;cursor:pointer;}
-  .stab.on{background:rgba(79,141,255,.12);color:#4f8dff;}
-  .content-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:12px 14px;background:${dark?'#141414':'#fff'};border:1px solid ${dark?'#222':'#e5e5e5'};border-radius:10px;margin-bottom:8px;}
+
+  /* LIST ROWS */
+  .intern-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+    padding:14px 16px;background:${dark?'#111':'#fff'};border:1px solid ${dark?'#1e1e1e':'#e8e8e8'};
+    border-radius:12px;margin-bottom:8px;transition:border-color .15s;}
+  .intern-row:hover{border-color:${dark?'#2a2a2a':'#d0d0d0'};}
+  .intern-title{font-size:14px;font-weight:700;margin-bottom:3px;}
+  .intern-meta{font-size:11px;color:${dark?'#666':'#999'};margin-top:2px;}
+  .intern-actions{display:flex;gap:6px;flex-shrink:0;align-items:flex-start;}
+  @media(max-width:480px){
+    .intern-row{flex-direction:column;}
+    .intern-actions{width:100%;justify-content:flex-end;margin-top:6px;}
+  }
+
+  /* SUBSCRIBER ROWS */
+  .sub-row{display:flex;align-items:center;gap:12px;padding:12px 16px;
+    margin-bottom:8px;border-radius:12px;border:1px solid ${dark?'#1e1e1e':'#e8e8e8'};
+    background:${dark?'#111':'#fff'};transition:border-color .15s;}
+  .sub-row:hover{border-color:${dark?'#2a2a2a':'#d0d0d0'};}
+  .sub-email{font-size:13px;font-weight:600;word-break:break-all;}
+  .sub-meta{display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap;}
+  .badge-pro{font-size:10px;padding:2px 9px;border-radius:20px;font-weight:700;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.2);}
+  .badge-free{font-size:10px;padding:2px 9px;border-radius:20px;font-weight:700;background:${dark?'rgba(148,163,184,.08)':'rgba(0,0,0,.06)'};color:${dark?'#666':'#999'};}
+  .sub-actions{display:flex;gap:8px;flex-shrink:0;margin-left:auto;}
+  @media(max-width:520px){
+    .sub-row{flex-direction:column;align-items:flex-start;}
+    .sub-actions{width:100%;justify-content:flex-end;margin-left:0;}
+  }
+
+  /* CONTENT ROWS */
+  .content-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+    padding:12px 14px;background:${dark?'#111':'#fff'};border:1px solid ${dark?'#1e1e1e':'#e8e8e8'};
+    border-radius:11px;margin-bottom:8px;}
   .content-title{font-size:13px;font-weight:600;margin-bottom:2px;}
-  .content-body{font-size:11px;color:${dark?'#888':'#888'};display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .content-body{font-size:11px;color:${dark?'#777':'#999'};display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
   .content-actions{display:flex;gap:6px;flex-shrink:0;}
+
+  /* MISC */
+  .empty{text-align:center;color:${dark?'#444':'#bbb'};padding:40px 20px;font-size:13px;}
+  .err{color:#ff5c5c;font-size:12px;margin-bottom:10px;padding:8px 12px;background:rgba(255,92,92,.08);border-radius:8px;border:1px solid rgba(255,92,92,.2);}
+  .import-status{font-size:12px;color:#4f8dff;margin-top:4px;}
+
+  /* SECTION TABS */
+  .section-tabs{display:flex;gap:4px;margin-bottom:22px;border-bottom:1px solid ${dark?'#1e1e1e':'#e8e8e8'};
+    padding-bottom:0;overflow-x:auto;scrollbar-width:none;}
+  .section-tabs::-webkit-scrollbar{display:none;}
+  .stab{padding:9px 16px;border-radius:9px 9px 0 0;border:none;background:transparent;
+    color:${dark?'#666':'#999'};font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;
+    border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
+  .stab:hover{color:${dark?'#aaa':'#555'};}
+  .stab.on{color:#4f8dff;border-bottom-color:#4f8dff;background:${dark?'rgba(79,141,255,.06)':'rgba(79,141,255,.04)'};}
+
+  /* MODALS */
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);
+    display:flex;align-items:center;justify-content:center;padding:16px;z-index:100;}
+  .modal-box{background:${dark?'#111':'#fff'};border:1px solid ${dark?'#222':'#e0e0e0'};
+    border-radius:20px;padding:24px;max-width:640px;width:100%;max-height:92vh;overflow-y:auto;}
+  @media(max-width:480px){.modal-box{padding:18px;border-radius:16px;}}
+  .modal-title{font-size:17px;font-weight:700;margin-bottom:18px;}
+  .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid ${dark?'#1e1e1e':'#f0f0f0'};}
+
+  /* LOGIN */
+  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+    background:${dark?'radial-gradient(ellipse at 50% 0%,rgba(79,141,255,.08) 0%,transparent 60%)':''}}
+  .login-card{background:${dark?'#111':'#fff'};border:1px solid ${dark?'#1e1e1e':'#e0e0e0'};
+    border-radius:20px;padding:36px 32px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,${dark?.4:.1});}
+  @media(max-width:440px){.login-card{padding:24px 20px;}}
+  .login-title{font-size:24px;font-weight:800;margin-bottom:4px;letter-spacing:-.3px;}
+  .login-sub{font-size:13px;color:${dark?'#555':'#999'};margin-bottom:24px;}
+
+  /* SECTION HEADER */
+  .sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
   `;
 }
 
@@ -456,8 +526,8 @@ export default function AdminPage() {
       <style>{css(dark)}</style>
       <div className="wrap">
         <div className="top">
-          <div className="logo">Campus<span>Hub</span> Admin</div>
-          <div style={{display:'flex',gap:8,alignItems:'flex-start',flexWrap:'wrap'}}>
+          <div className="logo">Campus<span>Hub</span> <span style={{fontWeight:400,fontSize:14,color:'#555'}}>Admin</span></div>
+          <div className="top-actions">
             <button className="btn btn-p btn-sm" onClick={openNew}>+ New Internship</button>
             <div>
               <input ref={odsInputRef} type="file" accept=".ods,.obs,.xlsx,.xls,.csv" style={{display:'none'}} onChange={handleOdsImport}/>
@@ -470,24 +540,24 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* STATS ROW */}
-        <div style={{display:'flex',gap:10,marginBottom:20,flexWrap:'wrap'}}>
-          <div className="card" style={{flex:'1 1 160px',cursor:'pointer',minWidth:140}} onClick={()=>setShowUsers(true)}>
-            <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'.07em',color:'#888',marginBottom:6}}>Total Users</div>
-            <div style={{fontSize:28,fontWeight:800,color:'#4f8dff',fontFamily:'monospace'}}>{users?.count??'–'}</div>
-            <div style={{fontSize:11,color:'#666',marginTop:3}}>click to view all emails</div>
+        {/* STATS GRID */}
+        <div className="stats-grid">
+          <div className="stat-card" onClick={()=>setShowUsers(true)}>
+            <div className="stat-lbl">Total Users</div>
+            <div className="stat-val" style={{color:'#4f8dff'}}>{users?.count??'–'}</div>
+            <div className="stat-sub">click to view emails</div>
           </div>
-          <div className="card" style={{flex:'1 1 160px',minWidth:140}}>
-            <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'.07em',color:'#888',marginBottom:6}}>Internship Listings</div>
-            <div style={{fontSize:28,fontWeight:800,color:'#22d17a',fontFamily:'monospace'}}>{internships.length}</div>
-            <div style={{fontSize:11,color:'#666',marginTop:3}}>active postings</div>
+          <div className="stat-card" style={{cursor:'default'}}>
+            <div className="stat-lbl">Internship Listings</div>
+            <div className="stat-val" style={{color:'#22d17a'}}>{internships.length}</div>
+            <div className="stat-sub">active postings</div>
           </div>
-          <div className="card" style={{flex:'1 1 160px',cursor:'pointer',minWidth:140}} onClick={()=>setActiveSection('subscribers')}>
-            <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'.07em',color:'#888',marginBottom:6}}>Pro Subscribers</div>
-            <div style={{fontSize:28,fontWeight:800,color:'#f59e0b',fontFamily:'monospace'}}>
+          <div className="stat-card" onClick={()=>setActiveSection('subscribers')}>
+            <div className="stat-lbl">Pro Subscribers</div>
+            <div className="stat-val" style={{color:'#f59e0b'}}>
               {subscribers===null?'–':subscribers.filter(s=>s.isPro).length}
             </div>
-            <div style={{fontSize:11,color:'#666',marginTop:3}}>active pro users</div>
+            <div className="stat-sub">active pro users</div>
           </div>
         </div>
 
@@ -501,8 +571,9 @@ export default function AdminPage() {
 
         {activeSection==='internships'&&(
         <>
-        <h2>Internship Listings ({internships.length})</h2>
-
+        <div className="sec-header">
+          <h2 style={{margin:0}}>Internship Listings ({internships.length})</h2>
+        </div>
         {loading && <div className="empty">Loading…</div>}
         {!loading && internships.length === 0 && <div className="empty">No internships yet. Add one or import an ODS file!</div>}
         {internships.map(item => (
@@ -520,69 +591,60 @@ export default function AdminPage() {
         ))}
         </>
         )}
-      </div>
 
-
-      {/* SUBSCRIBERS SECTION */}
-      {activeSection==='subscribers'&&(
-        <>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16,flexWrap:'wrap',gap:10}}>
-            <h2 style={{margin:0}}>Pro Subscribers ({subscribers===null?'…':subscribers.filter(s=>s.isPro).length} active / {subscribers===null?'…':subscribers.length} total)</h2>
-            <button className="btn btn-g btn-sm" onClick={()=>fetchSubscribers(adminKey)}>↻ Refresh</button>
-          </div>
-          {subscribers===null&&<div className="empty">Loading…</div>}
-          {subscribers!==null&&subscribers.length===0&&<div className="empty">No subscribers yet.</div>}
-          {(subscribers||[]).map(s=>{
-            const expiry=s.currentPeriodEnd?new Date(s.currentPeriodEnd).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):null;
-            const grantBusy=subActionLoading===s.email+'grant';
-            const revokeBusy=subActionLoading===s.email+'revoke';
-            return(
-              <div key={s.email} style={{display:'flex',alignItems:'center',gap:12,padding:'10px 14px',
-                marginBottom:8,borderRadius:10,border:'1px solid rgba(255,255,255,.08)',
-                background:'rgba(255,255,255,.03)',flexWrap:'wrap'}}>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:600,wordBreak:'break-all'}}>{s.email}</div>
-                  <div style={{display:'flex',alignItems:'center',gap:8,marginTop:3,flexWrap:'wrap'}}>
-                    <span style={{fontSize:11,padding:'2px 8px',borderRadius:20,fontWeight:700,
-                      background:s.isPro?'rgba(245,158,11,.15)':'rgba(148,163,184,.1)',
-                      color:s.isPro?'#f59e0b':'#888'}}>
-                      {s.isPro?'PRO':'FREE'}
-                    </span>
-                    {expiry&&<span style={{fontSize:11,color:'#666'}}>Expires {expiry}</span>}
+        {/* SUBSCRIBERS SECTION */}
+        {activeSection==='subscribers'&&(
+          <>
+            <div className="sec-header">
+              <h2 style={{margin:0}}>Pro Subscribers <span style={{fontSize:13,fontWeight:400,color:'#888'}}>({subscribers===null?'…':subscribers.filter(s=>s.isPro).length} active / {subscribers===null?'…':subscribers.length} total)</span></h2>
+              <button className="btn btn-g btn-sm" onClick={()=>fetchSubscribers(adminKey)}>↻ Refresh</button>
+            </div>
+            {subscribers===null&&<div className="empty">Loading…</div>}
+            {subscribers!==null&&subscribers.length===0&&<div className="empty">No subscribers yet.</div>}
+            {(subscribers||[]).map(s=>{
+              const expiry=s.currentPeriodEnd?new Date(s.currentPeriodEnd).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):null;
+              const grantBusy=subActionLoading===s.email+'grant';
+              const revokeBusy=subActionLoading===s.email+'revoke';
+              return(
+                <div key={s.email} className="sub-row">
+                  <div style={{flex:1,minWidth:0}}>
+                    <div className="sub-email">{s.email}</div>
+                    <div className="sub-meta">
+                      <span className={s.isPro?'badge-pro':'badge-free'}>{s.isPro?'PRO':'FREE'}</span>
+                      {expiry&&<span style={{fontSize:11,color:'#666'}}>Expires {expiry}</span>}
+                    </div>
+                  </div>
+                  <div className="sub-actions">
+                    {!s.isPro&&(
+                      <button className="btn btn-p btn-sm" disabled={grantBusy}
+                        onClick={()=>handleSubAction(s.email,'grant')}>
+                        {grantBusy?'…':'Grant Pro'}
+                      </button>
+                    )}
+                    {s.isPro&&(
+                      <button className="btn btn-r btn-sm" disabled={revokeBusy}
+                        onClick={()=>handleSubAction(s.email,'revoke')}>
+                        {revokeBusy?'…':'Revoke'}
+                      </button>
+                    )}
                   </div>
                 </div>
-                <div style={{display:'flex',gap:8,flexShrink:0}}>
-                  {!s.isPro&&(
-                    <button className="btn btn-p btn-sm" disabled={grantBusy}
-                      onClick={()=>handleSubAction(s.email,'grant')}>
-                      {grantBusy?'…':'Grant Pro'}
-                    </button>
-                  )}
-                  {s.isPro&&(
-                    <button className="btn btn-r btn-sm" disabled={revokeBusy}
-                      onClick={()=>handleSubAction(s.email,'revoke')}>
-                      {revokeBusy?'…':'Revoke'}
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-          {/* Grant pro to any email not yet in list */}
-          <GrantNewUser adminKey={adminKey} onDone={()=>fetchSubscribers(adminKey)}/>
-        </>
-      )}
+              );
+            })}
+            <GrantNewUser adminKey={adminKey} onDone={()=>fetchSubscribers(adminKey)}/>
+          </>
+        )}
 
-      {/* CONTENT SECTIONS — Guide + Wellness */}
-      {activeSection!=='internships'&&activeSection!=='subscribers'&&(()=>{
-        const sectionMap={'guide1':{label:'Internship Guide — Topic 1',data:guideContent1},'guide2':{label:'Internship Guide — Topic 2',data:guideContent2},'wellness':{label:'Mental Health & Wellness',data:wellContent}};
-        const {label,data}=sectionMap[activeSection]||{};
-        return(
-          <>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
-              <h2 style={{margin:0}}>{label}</h2>
-              <button className="btn btn-p btn-sm" onClick={()=>openContentForm(activeSection,null)}>+ Add Entry</button>
-            </div>
+        {/* CONTENT SECTIONS — Guide + Wellness */}
+        {activeSection!=='internships'&&activeSection!=='subscribers'&&(()=>{
+          const sectionMap={'guide1':{label:'Internship Guide — Topic 1',data:guideContent1},'guide2':{label:'Internship Guide — Topic 2',data:guideContent2},'wellness':{label:'Mental Health & Wellness',data:wellContent}};
+          const {label,data}=sectionMap[activeSection]||{};
+          return(
+            <>
+              <div className="sec-header">
+                <h2 style={{margin:0}}>{label}</h2>
+                <button className="btn btn-p btn-sm" onClick={()=>openContentForm(activeSection,null)}>+ Add Entry</button>
+              </div>
             {data.length===0&&<div className="empty">No entries yet. Add one!</div>}
             {data.map(e=>(
               <div key={e.id} className="content-row">
@@ -598,9 +660,10 @@ export default function AdminPage() {
                 </div>
               </div>
             ))}
-          </>
-        );
-      })()}
+            </>
+          );
+        })()}
+      </div>
 
       {/* CONTENT FORM MODAL */}
       {showContentForm&&(
@@ -734,15 +797,15 @@ function GrantNewUser({ adminKey, onDone }) {
     setBusy(false);
   }
   return (
-    <div style={{marginTop:24,padding:'16px',borderRadius:10,border:'1px dashed rgba(79,141,255,.3)',background:'rgba(79,141,255,.04)'}}>
-      <div style={{fontSize:12,fontWeight:700,color:'#888',marginBottom:10,textTransform:'uppercase',letterSpacing:'.06em'}}>Grant Pro to any user</div>
-      <form onSubmit={handle} style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+    <div style={{marginTop:20,padding:'18px 20px',borderRadius:12,border:'1px dashed rgba(79,141,255,.25)',background:'rgba(79,141,255,.03)'}}>
+      <div style={{fontSize:11,fontWeight:700,color:'#4f8dff',marginBottom:12,textTransform:'uppercase',letterSpacing:'.08em'}}>Grant Pro to any user</div>
+      <form onSubmit={handle} style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'flex-start'}}>
         <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="student@srmist.edu.in"
-          style={{flex:1,minWidth:200,padding:'8px 12px',borderRadius:8,border:'1px solid rgba(255,255,255,.12)',
-            background:'rgba(255,255,255,.05)',color:'inherit',fontSize:13}}/>
-        <button type="submit" className="btn btn-p btn-sm" disabled={busy}>{busy?'…':'Grant Pro'}</button>
+          style={{flex:'1 1 220px',minWidth:0,padding:'8px 12px',borderRadius:9,border:'1px solid rgba(79,141,255,.2)',
+            background:'rgba(79,141,255,.05)',color:'inherit',fontSize:13,outline:'none'}}/>
+        <button type="submit" className="btn btn-p btn-sm" disabled={busy} style={{flexShrink:0}}>{busy?'Granting…':'Grant Pro'}</button>
       </form>
-      {msg&&<div style={{marginTop:8,fontSize:12,color:msg.startsWith('Error')?'#f87171':'#22d17a'}}>{msg}</div>}
+      {msg&&<div style={{marginTop:10,fontSize:12,color:msg.startsWith('Error')?'#f87171':'#22d17a',fontWeight:500}}>{msg}</div>}
     </div>
   );
 }
