@@ -1,18 +1,6 @@
 // Next.js configuration — excludes Playwright from client bundle
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  async rewrites() {
-    const backend = (process.env.BACKEND_URL || '').replace(/\/+$/, '');
-    if (!backend) return { beforeFiles: [] };
-    return {
-      beforeFiles: [
-        {
-          source: '/api/:path*',
-          destination: `${backend}/api/:path*`,
-        },
-      ],
-    };
-  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
