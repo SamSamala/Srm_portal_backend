@@ -1,5 +1,5 @@
 // Root app component — manages auth state and renders Landing or Dashboard
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Landing from './Landing';
 import Dashboard from './Dashboard';
 import { getDayOrder } from './Dashboard';
@@ -9,7 +9,7 @@ const LS_DATA_TIME = 'srm_data_cache_ts';
 const LS_CACHE_MAX_AGE = 4 * 60 * 60 * 1000; // 4 hours
 
 export default function App() {
-  const [dark, setDark] = useState(() => localStorage.getItem('srm_dark') === '1');
+  const [dark, setDark] = useState(() => localStorage.getItem('srm_dark') !== '0');
   const [view,        setView]        = useState('loading');
   const [email,       setEmail]       = useState('');
   const [pass,        setPass]        = useState('');
@@ -24,6 +24,9 @@ export default function App() {
   const [dataLoading, setDataLoading] = useState(false);
   const [lastUpdatedTs, setLastUpdatedTs] = useState(0);
   const [showSubscribe, setShowSubscribe] = useState(false);
+  const [showSaveLogin, setShowSaveLogin] = useState(false);
+  const [isFirstLogin,  setIsFirstLogin]  = useState(false);
+  // Subscription state
   const [isPro,       setIsPro]       = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
 
@@ -36,7 +39,15 @@ export default function App() {
     } catch(e) {}
   }
 
-  // Fetch subscription status (called after login and after payment)
+  function proceedAfterLogin() {
+    if (!localStorage.getItem('campushub_sub_shown')) {
+      setShowSubscribe(true);
+    } else {
+      setView('dashboard');
+    }
+  }
+
+  // Fetch subscription status from server (called after every login)
   async function fetchSubStatus() {
     try {
       const res = await fetch('/api/billing/status');
@@ -48,35 +59,45 @@ export default function App() {
   }
 
   // Persist dark mode preference
+  //hi
   useEffect(() => { localStorage.setItem('srm_dark', dark ? '1' : '0'); }, [dark]);
 
   // On mount: check for saved session + localStorage data cache
   useEffect(() => {
-    const token      = localStorage.getItem('srm_session_token');
-    const savedEmail = localStorage.getItem('srm_session_email');
+    // One-time migration: delete any legacy plaintext credentials
+    if (localStorage.getItem('srm_saved_creds')) localStorage.removeItem('srm_saved_creds');
 
-    if (!token || !savedEmail) { setView('landing'); return; }
-
-    setSavedToken(token);
-    setEmail(savedEmail);
-
-    // Try to show cached data immediately (instant display)
+    const token         = localStorage.getItem('srm_session_token');
+    const savedEmail    = localStorage.getItem('srm_session_email');
+    const rememberToken = localStorage.getItem('srm_remember_token');
+    if (!token || !savedEmail) {
+      if (rememberToken) { autoLoginWithToken(rememberToken); }
+      else { setView('landing'); }
+      return;
+    }
+    setSavedToken(token); setEmail(savedEmail);
     const cachedRaw = localStorage.getItem(LS_DATA_KEY);
     const cachedTs  = parseInt(localStorage.getItem(LS_DATA_TIME) || '0');
-
-    if (cachedRaw && (Date.now() - cachedTs) < LS_CACHE_MAX_AGE) {
+    const isStale   = !cachedRaw || (Date.now() - cachedTs) >= LS_CACHE_MAX_AGE;
+    if (cachedRaw && !isStale) {
       try {
-        setData(JSON.parse(cachedRaw));
-        setLastUpdatedTs(cachedTs);
-        setView('dashboard');
+        setData(JSON.parse(cachedRaw)); setLastUpdatedTs(cachedTs); setView('dashboard');
         fetchSubStatus();
-        // Silently refresh in background (no spinner)
         backgroundRefresh(savedEmail, token, false);
         return;
       } catch(e) {}
     }
-
-    // No usable cache — normal auto-login with spinner
+    if (isStale && rememberToken) {
+      if (cachedRaw) {
+        try {
+          setData(JSON.parse(cachedRaw)); setLastUpdatedTs(cachedTs); setView('dashboard');
+          fetchSubStatus();
+          backgroundRefreshWithToken(rememberToken);
+          return;
+        } catch(e) {}
+      }
+      autoLoginWithToken(rememberToken); return;
+    }
     autoLogin(savedEmail, token);
   }, []);
 
@@ -109,24 +130,67 @@ export default function App() {
       // Stop spinner first, then apply new data so UI doesn't flash mid-spin
       setDataLoading(false);
       if (expired) {
-        localStorage.removeItem('srm_session_token');
-        localStorage.removeItem('srm_session_email');
-        localStorage.removeItem(LS_DATA_KEY);
-        localStorage.removeItem(LS_DATA_TIME);
-        setSavedToken('');
-        setData(null);
-        setView('login');
+        const expiredRememberToken = localStorage.getItem('srm_remember_token');
+        if (expiredRememberToken) {
+          backgroundRefreshWithToken(expiredRememberToken);
+        } else {
+          localStorage.removeItem('srm_session_token'); localStorage.removeItem('srm_session_email');
+          localStorage.removeItem(LS_DATA_KEY); localStorage.removeItem(LS_DATA_TIME);
+          setSavedToken(''); setData(null); setView('login');
+        }
       } else if (freshData) {
         setData(freshData);
         if (forceRefresh) {
-          // Manual refresh: update data + timestamp
           saveDataCache(freshData);
         } else {
-          // Silent background refresh: update data in storage but keep original timestamp
           try { localStorage.setItem(LS_DATA_KEY, JSON.stringify(freshData)); } catch(e) {}
         }
       }
     }
+  }
+
+  async function backgroundRefreshWithToken(rememberToken) {
+    setDataLoading(true);
+    try {
+      const res = await fetch('/api/auth/refresh', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ remember_token: rememberToken }) });
+      const json = await res.json();
+      if (res.ok && json.data && !json.needsCaptcha) {
+        if (json.sessionToken) {
+          const em = json.data?.student?.email || localStorage.getItem('srm_session_email');
+          localStorage.setItem('srm_session_token', json.sessionToken);
+          localStorage.setItem('srm_session_email', em || '');
+          setSavedToken(json.sessionToken);
+          if (em) setEmail(em);
+        }
+        setData(json.data);
+        try { localStorage.setItem(LS_DATA_KEY, JSON.stringify(json.data)); } catch(e) {}
+      } else if (json.error === 'invalid_token' || json.error === 'credentials_expired') {
+        localStorage.removeItem('srm_remember_token');
+      }
+    } catch(e) {} finally { setDataLoading(false); }
+  }
+
+  async function autoLoginWithToken(rememberToken) {
+    setIsFirstLogin(false); setLoading(true); setView('loading');
+    try {
+      const res = await fetch('/api/auth/refresh', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ remember_token: rememberToken }) });
+      const json = await res.json();
+      if (res.ok && json.data && !json.needsCaptcha) {
+        if (json.sessionToken) {
+          const em = json.data?.student?.email || '';
+          localStorage.setItem('srm_session_token', json.sessionToken);
+          localStorage.setItem('srm_session_email', em);
+          setSavedToken(json.sessionToken);
+          if (em) setEmail(em);
+        }
+        setData(json.data); saveDataCache(json.data);
+        fetchSubStatus();
+        setView('dashboard');
+      } else {
+        localStorage.removeItem('srm_remember_token');
+        setView('landing');
+      }
+    } catch(e) { setView('landing'); } finally { setLoading(false); }
   }
 
   // Auto-login with saved session token (shows spinner — used when no cache)
@@ -153,18 +217,12 @@ export default function App() {
         fetchSubStatus();
         setView('dashboard');
       } else if (res.status === 401 || json.error === 'session_expired') {
-        localStorage.removeItem('srm_session_token');
-        localStorage.removeItem('srm_session_email');
-        setSavedToken('');
+        const expiredRememberToken = localStorage.getItem('srm_remember_token');
+        localStorage.removeItem('srm_session_token'); localStorage.removeItem('srm_session_email'); setSavedToken('');
+        if (expiredRememberToken) { setLoading(false); autoLoginWithToken(expiredRememberToken); return; }
         setView('login');
-      } else {
-        setView('landing');
-      }
-    } catch (e) {
-      setView('landing');
-    } finally {
-      setLoading(false);
-    }
+      } else { setView('landing'); }
+    } catch (e) { setView('landing'); } finally { setLoading(false); }
   }
 
   // Manual login
@@ -172,6 +230,7 @@ export default function App() {
     e?.preventDefault();
     if (!email || !pass) { setError('Enter email and password.'); return; }
     setError('');
+    setIsFirstLogin(!localStorage.getItem('srm_session_token'));
     setLoading(true);
     try {
       const controller = new AbortController();
@@ -201,11 +260,9 @@ export default function App() {
         setData(json.data);
         saveDataCache(json.data);
         fetchSubStatus();
-        if (!localStorage.getItem('campushub_sub_shown')) {
-          setShowSubscribe(true);
-        } else {
-          setView('dashboard');
-        }
+        if (!localStorage.getItem('srm_remember_token') && !localStorage.getItem('srm_save_login_declined')) {
+          setShowSaveLogin(true);
+        } else { proceedAfterLogin(); }
       }
     } catch (err) {
       if (err.name === 'AbortError') setError('Request timed out. SRM portal may be down. Please try again.');
@@ -243,11 +300,9 @@ export default function App() {
         setData(json.data);
         saveDataCache(json.data);
         fetchSubStatus();
-        if (!localStorage.getItem('campushub_sub_shown')) {
-          setShowSubscribe(true);
-        } else {
-          setView('dashboard');
-        }
+        if (!localStorage.getItem('srm_remember_token') && !localStorage.getItem('srm_save_login_declined')) {
+          setShowSaveLogin(true);
+        } else { proceedAfterLogin(); }
       }
     } catch (err) {
       setError(err.message);
@@ -276,7 +331,6 @@ export default function App() {
   async function startUpgrade() {
     setShowUpgrade(false);
     try {
-      // Create Razorpay order/subscription
       const orderRes = await fetch('/api/billing/create-order', { method: 'POST' });
       if (!orderRes.ok) {
         const j = await orderRes.json().catch(() => ({}));
@@ -286,7 +340,6 @@ export default function App() {
       }
       const { subscriptionId, keyId } = await orderRes.json();
 
-      // Load Razorpay script if not already loaded
       await new Promise((resolve, reject) => {
         if (window.Razorpay) { resolve(); return; }
         const s = document.createElement('script');
@@ -337,6 +390,7 @@ export default function App() {
   async function logout() {
     localStorage.removeItem('srm_session_token');
     localStorage.removeItem('srm_session_email');
+    localStorage.removeItem('srm_remember_token');
     localStorage.removeItem(LS_DATA_KEY);
     localStorage.removeItem(LS_DATA_TIME);
     setSavedToken('');
@@ -371,6 +425,7 @@ export default function App() {
     dataLoading, setDataLoading,
     handleLogin, handleCaptcha, logout,
     lastUpdatedTs,
+    isFirstLogin,
     onManualRefresh: () => backgroundRefresh(email, savedToken, true),
     isPro,
     onUpgrade: () => setShowUpgrade(true),
@@ -406,6 +461,25 @@ export default function App() {
       onLogin={() => setView('login')}
       dark={dark}
       setDark={setDark}
+    />
+  );
+
+  // Save Login prompt (after first successful manual login)
+  if (showSaveLogin) return (
+    <SaveLoginPrompt
+      dark={dark}
+      onYes={async () => {
+        try {
+          const res = await fetch('/api/auth/remember', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: pass }) });
+          const json = await res.json();
+          if (res.ok && json.remember_token) localStorage.setItem('srm_remember_token', json.remember_token);
+        } catch(e) {}
+        setShowSaveLogin(false); proceedAfterLogin();
+      }}
+      onNo={() => {
+        localStorage.setItem('srm_save_login_declined', '1');
+        setShowSaveLogin(false); proceedAfterLogin();
+      }}
     />
   );
 
@@ -466,6 +540,26 @@ function UpgradeModal({ dark, onClose, onPay }) {
           fontSize:13,fontWeight:500,cursor:'pointer'}}>
           Maybe later
         </button>
+      </div>
+    </div>
+  );
+}
+
+function SaveLoginPrompt({ dark, onYes, onNo }) {
+  const bg=dark?'#04060d':'#f5f0e8', surf=dark?'#0c1120':'#fff', border=dark?'rgba(255,255,255,.07)':'rgba(0,0,0,.09)', text=dark?'#eef2ff':'#1a1510', text2=dark?'#8896b3':'#6b6155';
+  return (
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:bg,padding:16,fontFamily:'Plus Jakarta Sans,sans-serif'}}>
+<style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}`}</style>
+      <div style={{background:surf,border:'1px solid '+border,borderRadius:20,padding:'32px 28px',maxWidth:380,width:'100%',boxShadow:'0 24px 48px rgba(0,0,0,.3)',animation:'fadeUp .4s ease both'}}>
+        <div style={{fontSize:32,marginBottom:12,textAlign:'center'}}>&#128274;</div>
+        <div style={{fontSize:20,fontWeight:800,color:text,marginBottom:6,textAlign:'center'}}>Save login?</div>
+        <div style={{fontSize:13,color:text2,lineHeight:1.6,textAlign:'center',marginBottom:24}}>
+          We will automatically refresh your data daily so it is ready when you open the app.
+        </div>
+        <button onClick={onYes} style={{width:'100%',padding:'12px',borderRadius:10,border:'none',background:'linear-gradient(135deg,#4f8dff,#7c5cfc)',color:'#fff',fontSize:14,fontWeight:700,cursor:'pointer',marginBottom:8}}
+          onMouseOver={e=>e.currentTarget.style.opacity='.88'} onMouseOut={e=>e.currentTarget.style.opacity='1'}>Yes, keep me logged in</button>
+        <button onClick={onNo} style={{width:'100%',padding:'11px',borderRadius:10,border:'1px solid '+border,background:'transparent',color:text2,fontSize:13,cursor:'pointer'}}
+          onMouseOver={e=>e.currentTarget.style.borderColor='#4f8dff'} onMouseOut={e=>e.currentTarget.style.borderColor=border}>No thanks</button>
       </div>
     </div>
   );

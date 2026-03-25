@@ -260,8 +260,21 @@ input,button,select{font-family:inherit;}
 .chip{font-size:9px;font-weight:600;color:var(--text2);background:var(--surf2);
   border:1px solid var(--border);border-radius:4px;padding:2px 7px;}
 
+/* HOME GRID */
+.home-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.scard--hero{grid-column:span 2;}
+.scard--wide{grid-column:1/-1;}
+.scard--action{display:flex;flex-direction:column;min-height:104px;}
+.scard-act-ico{font-size:28px;margin:4px 0 6px;}
+.scard-cta{font-size:10px;font-weight:700;color:var(--accent);margin-top:auto;letter-spacing:.03em;}
+.scard--wellness{border-color:rgba(34,209,122,.25)!important;background:rgba(34,209,122,.04)!important;}
+.scard--wellness:hover{border-color:rgba(34,209,122,.45)!important;}
+.scard-wellness-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.scard-wellness-txt{flex:1;min-width:0;}
+.scard-wellness-ico{font-size:38px;flex-shrink:0;}
+.scard-wellness-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;}
+
 /* SUMMARY CARDS */
-.summary-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;margin-bottom:14px;}
 .scard{background:var(--surf);border:1px solid var(--border);border-radius:12px;
   padding:16px;position:relative;overflow:hidden;transition:border-color .2s;}
 .scard:hover{border-color:var(--bord2);}
@@ -473,7 +486,7 @@ tbody td{padding:11px 14px;font-size:12px;vertical-align:middle;}
   .deskbar{display:flex!important;}
   .attlist{display:none!important;}
   .attdesk{display:block!important;}
-  .summary-row{grid-template-columns:repeat(auto-fit,minmax(165px,1fr));}
+  .home-grid{grid-template-columns:repeat(3,1fr);}
 }
 @media(max-width:767px){
   .deskbar{display:none!important;}
@@ -482,10 +495,12 @@ tbody td{padding:11px 14px;font-size:12px;vertical-align:middle;}
   .attdesk{display:none!important;}
   .attlist{display:flex!important;}
   
-  .summary-row{grid-template-columns:repeat(2,1fr);}
+  .home-grid{grid-template-columns:repeat(2,1fr);}
+  .scard--hero{grid-column:span 2;}
+  .scard--wide{grid-column:span 2;}
 }
 @media(min-width:1280px){
-  .summary-row{grid-template-columns:repeat(3,1fr);}
+  .home-grid{grid-template-columns:repeat(3,1fr);}
 }
 
 /* INTERNSHIPS */
@@ -507,6 +522,7 @@ tbody td{padding:11px 14px;font-size:12px;vertical-align:middle;}
   color:var(--text3);border:1px solid var(--border);}
 .int-tag-sem{color:var(--accent);background:rgba(79,141,255,.1);border-color:rgba(79,141,255,.2);}
 .int-tag-dead{color:var(--red);background:rgba(255,92,92,.08);border-color:rgba(255,92,92,.2);}
+.int-tag-time{color:var(--text3);background:transparent;border-color:transparent;padding-left:0;}
 .int-tag-skill{color:var(--acc2);background:rgba(124,92,252,.1);border-color:rgba(124,92,252,.2);}
 /* Internship detail modal */
 .int-detail-modal{background:var(--surf);border:1px solid var(--border);border-radius:18px;
@@ -526,6 +542,23 @@ tbody td{padding:11px 14px;font-size:12px;vertical-align:middle;}
   background:var(--accent);color:#fff;font-size:14px;font-weight:600;text-align:center;
   text-decoration:none;transition:opacity .15s;}
 .int-apply-btn:hover{opacity:.88;}
+.pred-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;border:1px solid rgba(79,141,255,.35);background:rgba(79,141,255,.1);color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit;}
+.pred-btn:hover{background:rgba(79,141,255,.2);border-color:var(--accent);}
+.pred-modal{background:var(--surf);border:1px solid var(--border);border-radius:16px;padding:22px 18px;width:90%;max-width:420px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.4);}
+.pred-row{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surf2);border-radius:7px;}
+.content-modal{background:var(--surf);border:1px solid var(--border);border-radius:16px;padding:22px 18px;width:92%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.4);}
+.wellness-modal{background:var(--surf);border:1px solid var(--border);border-radius:16px;padding:24px 18px;width:96%;max-width:560px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+.guide-tabs{display:flex;gap:6px;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:10px;}
+.guide-tab-btn{padding:6px 14px;border-radius:8px;border:none;background:transparent;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;}
+.guide-tab-btn.on{background:rgba(79,141,255,.12);color:var(--accent);}
+.content-entry{margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--border);}
+.content-entry:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+.content-entry img{width:100%;border-radius:10px;margin:10px 0;}
+.content-entry p{font-size:13px;line-height:1.65;color:var(--text2);white-space:pre-wrap;}
+.content-entry a{display:inline-block;margin-top:8px;padding:7px 14px;background:rgba(79,141,255,.1);border:1px solid rgba(79,141,255,.3);border-radius:8px;color:var(--accent);font-size:12px;font-weight:600;text-decoration:none;}
+.guide-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:9px;border:1px solid rgba(79,141,255,.35);background:rgba(79,141,255,.08);color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:12px;}
+.guide-btn:hover{background:rgba(79,141,255,.15);}
+
 `;
 
 }
@@ -721,6 +754,43 @@ function Calendar({ dark, onSelectDay, plannerData, program }) {
 }
 
 // -- AttCard (mobile) --------------------------------------------------------
+function ContentList({entries}){
+  if(!entries) return <div style={{textAlign:'center',padding:24,color:'var(--text3)',fontSize:13}}>Loading…</div>;
+  if(!entries.length) return <div style={{textAlign:'center',padding:24,color:'var(--text3)',fontSize:13}}>No content yet.</div>;
+  return(
+    <div>
+      {entries.map((e,i)=>(
+        <div key={e.id||i} className="content-entry">
+          {e.title&&<div style={{fontWeight:700,fontSize:14,marginBottom:6}}>{e.title}</div>}
+          {e.imageUrl&&<img src={e.imageUrl} alt={e.title||''} loading="lazy"/>}
+          {e.body&&<p>{e.body}</p>}
+          {e.linkUrl&&<a href={e.linkUrl} target="_blank" rel="noopener noreferrer">{e.linkLabel||'Learn more →'}</a>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function GuideContent({guideContent}){
+  const [tab,setTab]=useState(0);
+  if(!guideContent) return <div style={{textAlign:'center',padding:24,color:'var(--text3)',fontSize:13}}>Loading…</div>;
+  const sections=[{label:'Topic 1',entries:guideContent[0]||[]},{label:'Topic 2',entries:guideContent[1]||[]}];
+  // Use first non-empty section's title if available
+  const s1Title=(guideContent[0]||[]).find(e=>e.title)?.title;
+  const s2Title=(guideContent[1]||[]).find(e=>e.title)?.title;
+  const tabs=[s1Title||'Topic 1',s2Title||'Topic 2'];
+  return(
+    <>
+      <div className="guide-tabs">
+        {tabs.map((t,i)=>(
+          <button key={i} className={'guide-tab-btn'+(tab===i?' on':'')} onClick={()=>setTab(i)}>{t}</button>
+        ))}
+      </div>
+      <ContentList entries={sections[tab].entries}/>
+    </>
+  );
+}
+
 function AttCard({c,pCol}){
   const {attended,pct,required,canSkip,risk}=calcStats(c.conducted,c.absent);
   const col=pCol(risk);
@@ -750,7 +820,7 @@ function AttCard({c,pCol}){
 }
 
 // -- Loading Screen with real progress ---------------------------------------
-function LoginProgress({steps,startTime,dark}){
+function LoginProgress({steps,startTime,dark,isFirstLogin}){
   const [elapsed,setElapsed]=useState(0);
   const totalDur=steps.reduce((s,st)=>s+st.dur,0);
   useEffect(()=>{
@@ -799,15 +869,27 @@ function LoginProgress({steps,startTime,dark}){
         <p style={{fontSize:11,color:'var(--text3)',textAlign:'center',marginTop:14,lineHeight:1.6}}>
           SRM's portal is slow by nature.<br/>Please keep this tab open.
         </p>
+        {isFirstLogin&&<p style={{fontSize:11,color:'var(--accent)',textAlign:'center',marginTop:8,lineHeight:1.5}}>
+          This might take a while if you are logging in for the first time.
+        </p>}
       </div>
     </div>
   );
 }
 
 // -- Main Dashboard export ----------------------------------------------------
-function formatUpdTime(ts) {
+function timeAgo(ts) {
   if (!ts) return '';
-  return new Date(ts).toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit', hour12:true});
+  const diff = Date.now() - ts;
+  const s = Math.floor(diff / 1000);
+  if (s < 60) return 'just now';
+  const m = Math.floor(s / 60);
+  if (m < 60) return m + 'm ago';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + 'h ago';
+  const days = Math.floor(h / 24);
+  if (days < 7) return days + 'd ago';
+  return new Date(ts).toLocaleDateString('en-IN', {day:'numeric', month:'short'});
 }
 
 export default function Dashboard({
@@ -825,7 +907,7 @@ export default function Dashboard({
   showPass, setShowPass,
   dataLoading, setDataLoading,
   handleLogin, handleCaptcha, logout,
-  lastUpdatedTs, onManualRefresh,
+  lastUpdatedTs, onManualRefresh, isFirstLogin,
   isPro, onUpgrade,
 }) {
   const [tab,setTab]=useState('dashboard');
@@ -837,8 +919,17 @@ export default function Dashboard({
   const [internCount,setInternCount]=useState(null);
   const [internLoading,setInternLoading]=useState(false);
   const [deptFilter,setDeptFilter]=useState('');
-  const [semFilter,setSemFilter]=useState('');
   const [selectedInternship,setSelectedInternship]=useState(null);
+  const [showPredModal,setShowPredModal]=useState(false);
+  const [predFrom,setPredFrom]=useState("");
+  const [predTo,setPredTo]=useState("");
+  const [predResult,setPredResult]=useState(null);
+  const [showGuideModal,setShowGuideModal]=useState(false);
+  const [guideContent,setGuideContent]=useState(null);
+  const [,setTimeTick]=useState(0);
+  useEffect(()=>{const iv=setInterval(()=>setTimeTick(t=>t+1),60000);return()=>clearInterval(iv);},[]);
+  const [showWellnessModal,setShowWellnessModal]=useState(false);
+  const [wellnessContent,setWellnessContent]=useState(null);
 
   useEffect(()=>{const info=getPlannerInfo(new Date(),plannerData);if(info?.order)setActiveDay('Day '+info.order);},[plannerData]);
 
@@ -847,7 +938,7 @@ export default function Dashboard({
     if(data.plannerData) setPlannerData(data.plannerData);
   },[data]);
   useEffect(()=>{if(loading)setLoginStartTime(Date.now());},[loading]);
-  // Fetch internship count on dashboard tab so the card shows a number even before visiting internships tab
+  // Pre-fetch internship count on mount so dashboard card always shows a number
   useEffect(()=>{
     if(internCount!==null)return;
     fetch('/api/internships').then(async r=>{
@@ -868,19 +959,29 @@ export default function Dashboard({
         setInternships(null);
       } else {
         setInternships(Array.isArray(d)?d:[]);
-        if(typeof d.count==='number') setInternCount(d.count);
+        if(typeof d.count==='number') setInternCount(d.length);
       }
       setInternLoading(false);
     }).catch(()=>{setInternships([]);setInternLoading(false);});
   },[tab,isPro]);
-  // Pre-fill filters when student data loads
-  useEffect(()=>{
-    if(!data?.student)return;
-    if(!deptFilter)setDeptFilter(data.student.department||'');
-    if(!semFilter)setSemFilter(data.student.semester||'');
-  },[data]);
+  // (no auto-prefill — show all internships by default)
 
   function goTab(t){if(t==='internships'&&!isPro){onUpgrade?.();return;}setTab(t);}
+  async function runPrediction() {
+    if (!predFrom || !predTo) return;
+    setPredResult(null);
+    try {
+      const res = await fetch('/api/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, from: predFrom, to: predTo }),
+      });
+      const json = await res.json();
+      setPredResult(res.ok ? json : { error: json.error || 'Prediction failed' });
+    } catch(e) {
+      setPredResult({ error: 'Network error. Try again.' });
+    }
+  }
 
   const att=data?.attendance||[], marks=data?.marks||[];
   const tt=Array.isArray(data?.timetable)?data.timetable:[];
@@ -920,7 +1021,7 @@ export default function Dashboard({
   if(loading&&loginStartTime) return (
     <>
       <style>{getDashCSS(dark)}</style>
-      <LoginProgress steps={LOGIN_STEPS} startTime={loginStartTime} dark={dark}/>
+      <LoginProgress steps={LOGIN_STEPS} startTime={loginStartTime} dark={dark} isFirstLogin={isFirstLogin}/>
     </>
   );
 
@@ -1029,7 +1130,7 @@ export default function Dashboard({
                   <span className="refresh-bottom">
                     <span className="live-dot"/>
                     <span className="live-lbl">Live</span>
-                    <span className="live-time">{formatUpdTime(lastUpdatedTs)}</span>
+                    <span className="live-time">{timeAgo(lastUpdatedTs)}</span>
                   </span>
                 )}
               </span>
@@ -1076,37 +1177,64 @@ export default function Dashboard({
                     </div>
                   </div>
 
-                  <div className="summary-row">
-                    {(()=>{
+                  <div className="home-grid">
+                      {(()=>{
                       const totScored=marks.reduce((s,m)=>s+m.tests.reduce((a,t)=>a+(t.scored||0),0),0);
                       const totMax=marks.reduce((s,m)=>s+m.tests.reduce((a,t)=>a+t.maxMarks,0),0);
                       const todayCol=todayOrd?OC[todayOrd]:todayEvent?'var(--green)':'var(--text3)';
                       const todayVal=todayOrd?'Day '+todayOrd:todayEvent||'Holiday';
-                      return [
-                        {lbl:'Overall Attendance',val:overall+'%',sub:(totC-totA)+' of '+totC+' classes',col:overall<75?'var(--red)':overall<80?'var(--yellow)':'var(--green)',ac:overall<75?'var(--red)':overall<80?'var(--yellow)':'var(--green)',nav:'attendance'},
-                        {lbl:'Internal Marks',val:totMax>0?(totScored.toFixed(1)+' / '+totMax):'-',sub:'across '+marks.length+' subjects',col:'var(--accent)',ac:'var(--accent)',nav:'marks'},
-                        {lbl:'Today',val:todayVal,sub:new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'}),col:todayCol,ac:todayCol,nav:'timetable'},
-                      ].map(s=>(
-                        <div key={s.lbl} className="scard" style={{cursor:'pointer'}} onClick={()=>goTab(s.nav)}>
-                          <div className="scard-lbl">{s.lbl}</div>
-                          <div className="scard-val" style={{color:s.col}}>{s.val}</div>
-                          <div className="scard-sub">{s.sub}</div>
-                          <div className="scard-bar" style={{background:'linear-gradient(90deg,'+s.ac+',transparent)'}}/>
+                      const overallCol=overall<75?'var(--red)':overall<80?'var(--yellow)':'var(--green)';
+                      const openPredict=()=>{const t=new Date();const pad=n=>String(n).padStart(2,'0');const fmt=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());setPredFrom(fmt(t));const t2=new Date(t);t2.setDate(t2.getDate()+3);setPredTo(fmt(t2));setPredResult(null);setShowPredModal(true);};
+                      const openWellness=()=>{if(!wellnessContent){fetch('/api/content?section=mental_health').then(r=>r.json()).then(d=>setWellnessContent(Array.isArray(d)?d:[])).catch(()=>setWellnessContent([]));}setShowWellnessModal(true);};
+                      return (<>
+                        <div className="scard scard--hero" style={{cursor:'pointer'}} onClick={()=>goTab('attendance')}>
+                          <div className="scard-lbl">Overall Attendance</div>
+                          <div className="scard-val" style={{color:overallCol}}>{overall}%</div>
+                          <div className="scard-sub">{totC-totA} of {totC} classes attended</div>
+                          <div className="scard-bar" style={{background:'linear-gradient(90deg,'+overallCol+',transparent)'}}/>
                         </div>
-                      ));
-                    })()}
-                    <div className="scard" style={{cursor:'pointer',opacity:isPro?1:1,position:'relative'}}
-                      onClick={()=>isPro?goTab('internships'):onUpgrade?.()}>
-                      <div className="scard-lbl" style={{display:'flex',alignItems:'center',gap:5}}>
-                        Internships
-                        {!isPro&&<span style={{fontSize:10,lineHeight:1,verticalAlign:'middle'}}>🔒</span>}
-                      </div>
-                      <div className="scard-val" style={{color:isPro?'var(--acc2)':'var(--text3)'}}>
-                        {internCount!==null?internCount:(internships!==null?internships.length:'–')}
-                      </div>
-                      <div className="scard-sub">{isPro?'tap to browse openings':'upgrade to access'}</div>
-                      <div className="scard-bar" style={{background:isPro?'linear-gradient(90deg,var(--acc2),transparent)':'linear-gradient(90deg,var(--text3),transparent)'}}/>
-                    </div>
+                        <div className="scard" style={{cursor:'pointer'}} onClick={()=>goTab('timetable')}>
+                          <div className="scard-lbl">Today</div>
+                          <div className="scard-val" style={{color:todayCol}}>{todayVal}</div>
+                          <div className="scard-sub">{new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'})}</div>
+                          <div className="scard-bar" style={{background:'linear-gradient(90deg,'+todayCol+',transparent)'}}/>
+                        </div>
+                        <div className="scard" style={{cursor:'pointer'}} onClick={()=>goTab('marks')}>
+                          <div className="scard-lbl">Internal Marks</div>
+                          <div className="scard-val" style={{color:'var(--accent)'}}>{totMax>0?(totScored.toFixed(1)+' / '+totMax):'–'}</div>
+                          <div className="scard-sub">across {marks.length} subjects</div>
+                          <div className="scard-bar" style={{background:'linear-gradient(90deg,var(--accent),transparent)'}}/>
+                        </div>
+                        <div className="scard" style={{cursor:'pointer'}} onClick={()=>isPro?goTab('internships'):onUpgrade?.()}>
+                          <div className="scard-lbl" style={{display:'flex',alignItems:'center',gap:5}}>
+                            Internships
+                            {!isPro&&<span style={{fontSize:10,lineHeight:1}}>🔒</span>}
+                          </div>
+                          <div className="scard-val" style={{color:isPro?'var(--acc2)':'var(--text3)'}}>
+                            {internCount!==null?internCount:(internships!==null?internships.length:'–')}
+                          </div>
+                          <div className="scard-sub">{isPro?'tap to browse openings':'upgrade to access'}</div>
+                          <div className="scard-bar" style={{background:isPro?'linear-gradient(90deg,var(--acc2),transparent)':'linear-gradient(90deg,var(--text3),transparent)'}}/>
+                        </div>
+                        <div className="scard scard--action" style={{cursor:'pointer',borderColor:'rgba(79,141,255,.28)',background:'rgba(79,141,255,.06)'}} onClick={openPredict}>
+                          <div className="scard-lbl">Predict Attendance</div>
+                          <div className="scard-act-ico">📊</div>
+                          <div className="scard-cta">Check future impact →</div>
+                          <div className="scard-bar" style={{background:'linear-gradient(90deg,var(--accent),transparent)'}}/>
+                        </div>
+                        <div className="scard scard--wide scard--wellness" style={{cursor:'pointer'}} onClick={openWellness}>
+                          <div className="scard-wellness-row">
+                            <div className="scard-wellness-txt">
+                              <div className="scard-lbl">Mental Health &amp; Wellness</div>
+                              <div className="scard-wellness-name">You’re not alone — support &amp; resources</div>
+                              <div className="scard-sub">Explore tips, guides and stress management tools</div>
+                            </div>
+                            <div className="scard-wellness-ico">🌿</div>
+                          </div>
+                          <div className="scard-bar" style={{background:'linear-gradient(90deg,var(--green),transparent)'}}/>
+                        </div>
+                      </>);
+                      })()}
                   </div>
                 </>
               )}
@@ -1230,6 +1358,11 @@ export default function Dashboard({
                     Calendar showing calculated day orders. Log in again to load official planner data.
                   </p>}
                   <p style={{marginTop:10,fontSize:11,color:'var(--text3)'}}>Tap any date to view that day's timetable.</p>
+                  <div style={{marginTop:14}}>
+                    <button className="pred-btn" onClick={()=>{const t=new Date();const pad=n=>String(n).padStart(2,'0');const fmt=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());setPredFrom(fmt(t));const t2=new Date(t);t2.setDate(t2.getDate()+3);setPredTo(fmt(t2));setPredResult(null);setShowPredModal(true);}}>
+                      Predict Attendance
+                    </button>
+                  </div>
                 </>
               )}
 
@@ -1263,21 +1396,19 @@ export default function Dashboard({
                 }
                 const allDepts=[...new Set((internships||[]).flatMap(i=>i.departments||[]))].sort();
                 const filtered=(internships||[]).filter(i=>{
-                  const dMatch=!deptFilter||(i.departments||[]).some(d=>d.toLowerCase().includes(deptFilter.toLowerCase()));
-                  const sMatch=!semFilter||(i.semesters||[]).includes(String(semFilter));
-                  return dMatch&&sMatch;
+                  return !deptFilter||(i.departments||[]).some(d=>d.toLowerCase().includes(deptFilter.toLowerCase()));
                 });
                 return(
                   <>
+                    <button className="guide-btn" onClick={()=>{if(!guideContent){Promise.all([fetch('/api/content?section=internship_guide_1').then(r=>r.json()).catch(()=>[]),fetch('/api/content?section=internship_guide_2').then(r=>r.json()).catch(()=>[])]).then(([r1,r2])=>setGuideContent([Array.isArray(r1)?r1:[],Array.isArray(r2)?r2:[]]));}setShowGuideModal(true);}}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                      Internship Guide
+                    </button>
                     <div className="seclbl">Internships</div>
                     <div className="int-filters">
                       <select value={deptFilter} onChange={e=>setDeptFilter(e.target.value)}>
                         <option value="">All Departments</option>
                         {allDepts.map(d=><option key={d} value={d}>{d}</option>)}
-                      </select>
-                      <select value={semFilter} onChange={e=>setSemFilter(e.target.value)}>
-                        <option value="">All Semesters</option>
-                        {['1','2','3','4','5','6','7','8'].map(s=><option key={s} value={s}>Semester {s}</option>)}
                       </select>
                     </div>
                     {internLoading&&<div className="empty">Loading…</div>}
@@ -1288,13 +1419,15 @@ export default function Dashboard({
                           <div className="int-card-top">
                             <div style={{flex:1,minWidth:0}}>
                               <div className="int-title">{i.title}</div>
-                              <div className="int-company">{i.company}{i.location?(' · '+i.location):''}</div>
+                              <div className="int-company">
+                                {i.company}{i.location?(' · '+i.location):''}
+                                {(()=>{const m=(i.description||'').match(/^\[(.+?)\]/);return m?<span style={{color:'var(--text3)',opacity:.7}}> · {m[1]}</span>:null;})()}
+                              </div>
                             </div>
                             {i.stipend&&<span className="int-stipend">{i.stipend}</span>}
                           </div>
                           <div className="int-tags">
                             {(i.departments||[]).slice(0,2).map(d=><span key={d} className="int-tag">{d}</span>)}
-                            {(i.semesters||[]).length>0&&<span className="int-tag int-tag-sem">Sem {(i.semesters||[]).join(', ')}</span>}
                             {i.deadline&&<span className="int-tag int-tag-dead">Due {new Date(i.deadline).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</span>}
                           </div>
                         </div>
@@ -1351,12 +1484,6 @@ export default function Dashboard({
                 <div className="int-modal-body">{selectedInternship.description}</div>
               </div>
             )}
-            {(selectedInternship.semesters||[]).length>0&&(
-              <div className="int-modal-section">
-                <div className="int-modal-sh">Eligible Semesters</div>
-                <div className="int-tags" style={{marginTop:4}}>{(selectedInternship.semesters||[]).map(s=><span key={s} className="int-tag int-tag-sem">Sem {s}</span>)}</div>
-              </div>
-            )}
             {(selectedInternship.departments||[]).length>0&&(
               <div className="int-modal-section">
                 <div className="int-modal-sh">Departments</div>
@@ -1372,6 +1499,98 @@ export default function Dashboard({
             {selectedInternship.applyLink&&(
               <a href={selectedInternship.applyLink} target="_blank" rel="noopener noreferrer" className="int-apply-btn">Apply Now →</a>
             )}
+          </div>
+        </div>
+      )}
+
+      {showPredModal&&(
+        <div className="modal-overlay" onClick={()=>{setShowPredModal(false);setPredResult(null);}}>
+          <div className="pred-modal" onClick={e=>e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+              <div style={{fontWeight:700,fontSize:15}}>Attendance Predictor</div>
+              <button className="int-modal-close" onClick={()=>{setShowPredModal(false);setPredResult(null);}}>✕</button>
+            </div>
+            <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12,alignItems:'flex-end'}}>
+              <div style={{flex:1,minWidth:120}}>
+                <div style={{fontSize:10,color:'var(--text3)',marginBottom:4,fontWeight:600}}>ABSENT FROM</div>
+                <input type="date" value={predFrom} onChange={e=>setPredFrom(e.target.value)} style={{width:'100%',background:'var(--surf2)',border:'1px solid var(--border)',borderRadius:7,padding:'7px 10px',color:'var(--text)',fontSize:13}}/>
+              </div>
+              <div style={{flex:1,minWidth:120}}>
+                <div style={{fontSize:10,color:'var(--text3)',marginBottom:4,fontWeight:600}}>TO</div>
+                <input type="date" value={predTo} onChange={e=>setPredTo(e.target.value)} style={{width:'100%',background:'var(--surf2)',border:'1px solid var(--border)',borderRadius:7,padding:'7px 10px',color:'var(--text)',fontSize:13}}/>
+              </div>
+              <button onClick={runPrediction} style={{padding:'8px 18px',borderRadius:8,border:'none',background:'var(--accent)',color:'#fff',fontWeight:700,fontSize:13,cursor:'pointer',whiteSpace:'nowrap'}}>Check</button>
+            </div>
+            {predResult?.error&&<div style={{fontSize:12,color:'var(--red)',marginTop:8,padding:'8px 12px',background:'rgba(255,92,92,.08)',borderRadius:7}}>{predResult.error}</div>}
+            {predResult&&!predResult.error&&(
+              <div>
+                <div style={{fontSize:12,color:'var(--text3)',marginBottom:10}}>
+                  Working days absent: <strong style={{color:'var(--red)'}}>{predResult.days}</strong>
+                  {predResult.days===0&&<span style={{color:'var(--text3)'}}> (all holidays/weekends in range)</span>}
+                </div>
+                <div style={{marginBottom:8,padding:'10px 12px',background:'var(--surf2)',borderRadius:8,border:'1px solid var(--border)'}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <span style={{fontSize:12,fontWeight:600}}>Overall</span>
+                    <span style={{fontSize:13}}>
+                      <span style={{color:overall<75?'var(--red)':overall<80?'var(--yellow)':'var(--green)'}}>{overall}%</span>
+                      <span style={{color:'var(--text3)',margin:'0 5px'}}>→</span>
+                      <span style={{color:predResult.predOverall<75?'var(--red)':predResult.predOverall<80?'var(--yellow)':'var(--green)',fontWeight:700}}>{predResult.predOverall}%</span>
+                    </span>
+                  </div>
+                </div>
+                <div style={{maxHeight:240,overflowY:'auto',display:'flex',flexDirection:'column',gap:4}}>
+                  {predResult.results.filter(c=>c.newA>0).map((c,i)=>{
+                    const curPct=parseInt(c.conducted)>0?Math.round((parseInt(c.conducted)-parseInt(c.absent))/parseInt(c.conducted)*100):0;
+                    const dangerNew=c.pPct<75;
+                    return(
+                      <div key={i} className="pred-row">
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontSize:11,fontWeight:600,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{c.name||c.code}</div>
+                          <div style={{fontSize:10,color:'var(--text3)'}}>-{c.newA} class{c.newA>1?'es':''}</div>
+                        </div>
+                        <div style={{fontSize:12,textAlign:'right',flexShrink:0}}>
+                          <span style={{color:curPct<75?'var(--red)':curPct<80?'var(--yellow)':'var(--green)'}}>{curPct}%</span>
+                          <span style={{color:'var(--text3)',margin:'0 4px'}}>→</span>
+                          <span style={{color:dangerNew?'var(--red)':c.pPct<80?'var(--yellow)':'var(--green)',fontWeight:dangerNew?700:400}}>{c.pPct}%</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {predResult.results.filter(c=>c.newA>0).length===0&&<div style={{fontSize:12,color:'var(--text3)',textAlign:'center',padding:12}}>No classes affected (no timetable overlap).</div>}
+                </div>
+                <div style={{marginTop:10,padding:'8px 12px',borderRadius:8,background:predResult.atRisk>0?'rgba(255,92,92,.1)':'rgba(34,209,122,.1)',border:'1px solid '+(predResult.atRisk>0?'rgba(255,92,92,.3)':'rgba(34,209,122,.3)')}}>
+                  {predResult.atRisk>0
+                    ? <span style={{color:'var(--red)',fontSize:12,fontWeight:600}}>⚠ {predResult.atRisk} subject{predResult.atRisk>1?'s':''} will drop below 75%</span>
+                    : <span style={{color:'var(--green)',fontSize:12,fontWeight:600}}>Safe to skip — no subjects affected</span>}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* INTERNSHIP GUIDE MODAL */}
+      {showGuideModal&&(
+        <div className="modal-overlay" onClick={()=>setShowGuideModal(false)}>
+          <div className="content-modal" onClick={e=>e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+              <div style={{fontWeight:700,fontSize:15}}>Internship Guide</div>
+              <button className="int-modal-close" onClick={()=>setShowGuideModal(false)}>✕</button>
+            </div>
+            <GuideContent guideContent={guideContent}/>
+          </div>
+        </div>
+      )}
+
+      {/* WELLNESS MODAL */}
+      {showWellnessModal&&(
+        <div className="modal-overlay" onClick={()=>setShowWellnessModal(false)}>
+          <div className="wellness-modal" onClick={e=>e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+              <div style={{fontWeight:700,fontSize:16}}>Mental Health &amp; Wellness</div>
+              <button className="int-modal-close" onClick={()=>setShowWellnessModal(false)}>✕</button>
+            </div>
+            <ContentList entries={wellnessContent}/>
           </div>
         </div>
       )}

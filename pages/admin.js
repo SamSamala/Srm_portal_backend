@@ -1,5 +1,5 @@
 // pages/admin.js — Admin panel for managing internship listings
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const DEPARTMENTS = [
   'Computer Science and Engineering',
@@ -18,10 +18,40 @@ const DEPARTMENTS = [
   'Software Engineering',
 ];
 
-const SEMESTERS = ['1','2','3','4','5','6','7','8'];
+const BIO_DEPTS = ['Biomedical Engineering'];
+const TECH_DEPTS = [
+  'Computer Science and Engineering',
+  'Electronics and Communication Engineering',
+  'Electrical and Electronics Engineering',
+  'Information Technology',
+  'Artificial Intelligence and Data Science',
+  'Cyber Security',
+  'Software Engineering',
+  'Computer Science and Business Systems',
+];
+const OTHER_DEPTS = [
+  'Mechanical Engineering',
+  'Civil Engineering',
+  'Chemical Engineering',
+  'Aerospace Engineering',
+  'Automobile Engineering',
+];
+
+function catToDepts(cat) {
+  const c = (cat || '').toLowerCase().trim();
+  if (c === 'bio') return BIO_DEPTS;
+  if (c === 'tech') return TECH_DEPTS;
+  return OTHER_DEPTS;
+}
+
+function extractCompany(headline) {
+  const m = (headline || '').match(/ at (.+?)(\s*[|·\-]|$)/i) ||
+            (headline || '').match(/ @ (.+?)(\s*[|·\-]|$)/i);
+  return m ? m[1].trim() : '—';
+}
 
 const EMPTY_FORM = {
-  title:'', company:'', description:'', departments:[], semesters:[],
+  title:'', company:'', description:'', departments:[],
   stipend:'', location:'', skills:'', deadline:'', applyLink:'',
 };
 
@@ -30,12 +60,13 @@ function css(dark) {
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'Inter',sans-serif;background:${dark?'#0d0d0d':'#f5f5f5'};color:${dark?'#e8e8e8':'#111'};min-height:100vh;}
   .wrap{max-width:900px;margin:0 auto;padding:24px 16px;}
-  .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+  .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:10px;flex-wrap:wrap;}
   .logo{font-size:20px;font-weight:800;letter-spacing:-.3px;}
   .logo span{color:#4f8dff;}
   h2{font-size:18px;font-weight:700;margin-bottom:16px;}
   .btn{padding:9px 16px;border-radius:9px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:opacity .15s;}
   .btn:hover{opacity:.85;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
   .btn-p{background:#4f8dff;color:#fff;}
   .btn-g{background:${dark?'#222':'#e8e8e8'};color:${dark?'#ccc':'#444'};}
   .btn-r{background:#ff5c5c;color:#fff;}
@@ -62,6 +93,7 @@ function css(dark) {
   .intern-actions{display:flex;gap:6px;flex-shrink:0;}
   .empty{text-align:center;color:${dark?'#555':'#aaa'};padding:32px;font-size:13px;}
   .err{color:#ff5c5c;font-size:13px;margin-bottom:10px;}
+  .import-status{font-size:12px;color:#4f8dff;margin-top:4px;}
   .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);
     display:flex;align-items:center;justify-content:center;padding:16px;z-index:100;}
   .modal-box{background:${dark?'#141414':'#fff'};border:1px solid ${dark?'#222':'#e0e0e0'};
@@ -73,6 +105,13 @@ function css(dark) {
     border-radius:18px;padding:32px 28px;max-width:360px;width:100%;}
   .login-title{font-size:22px;font-weight:800;margin-bottom:4px;}
   .login-sub{font-size:13px;color:${dark?'#666':'#888'};margin-bottom:24px;}
+  .section-tabs{display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid ${dark?'#222':'#e0e0e0'};padding-bottom:12px;flex-wrap:wrap;}
+  .stab{padding:7px 16px;border-radius:8px;border:none;background:transparent;color:${dark?'#888':'#666'};font-size:13px;font-weight:600;cursor:pointer;}
+  .stab.on{background:rgba(79,141,255,.12);color:#4f8dff;}
+  .content-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:12px 14px;background:${dark?'#141414':'#fff'};border:1px solid ${dark?'#222':'#e5e5e5'};border-radius:10px;margin-bottom:8px;}
+  .content-title{font-size:13px;font-weight:600;margin-bottom:2px;}
+  .content-body{font-size:11px;color:${dark?'#888':'#888'};display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .content-actions{display:flex;gap:6px;flex-shrink:0;}
   `;
 }
 
@@ -91,10 +130,22 @@ export default function AdminPage() {
   const [deleteId, setDeleteId] = useState(null);
   const [users, setUsers] = useState(null);
   const [showUsers, setShowUsers] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importStatus, setImportStatus] = useState('');
+  const odsInputRef = useRef(null);
+  // Content management state
+  const [activeSection,setActiveSection]=useState('internships');
+  const [guideContent1,setGuideContent1]=useState([]);
+  const [guideContent2,setGuideContent2]=useState([]);
+  const [wellContent,setWellContent]=useState([]);
+  const [showContentForm,setShowContentForm]=useState(null); // {section, editItem or null}
+  const [contentForm,setContentForm]=useState({title:'',body:'',imageUrl:'',linkUrl:'',linkLabel:'',sortOrder:0});
+  const [contentSaving,setContentSaving]=useState(false);
+  const [contentErr,setContentErr]=useState('');
 
   useEffect(() => {
     const k = typeof window !== 'undefined' ? sessionStorage.getItem('adminKey') : '';
-    if (k) { setAdminKey(k); fetchInternships(k); fetchUsers(k); }
+    if (k) { setAdminKey(k); fetchInternships(k); fetchUsers(k); fetchContent(k); }
   }, []);
 
   async function fetchInternships(key) {
@@ -115,17 +166,57 @@ export default function AdminPage() {
     } catch { setUsers({ count: 0, emails: [] }); }
   }
 
+  async function fetchContent(key) {
+    const [r1,r2,r3] = await Promise.all([
+      fetch('/api/content?section=internship_guide_1').then(r=>r.json()).catch(()=>[]),
+      fetch('/api/content?section=internship_guide_2').then(r=>r.json()).catch(()=>[]),
+      fetch('/api/content?section=mental_health').then(r=>r.json()).catch(()=>[]),
+    ]);
+    setGuideContent1(Array.isArray(r1)?r1:[]);
+    setGuideContent2(Array.isArray(r2)?r2:[]);
+    setWellContent(Array.isArray(r3)?r3:[]);
+  }
+
+  const SECTION_KEYS = { guide1:'internship_guide_1', guide2:'internship_guide_2', wellness:'mental_health' };
+
+  function openContentForm(section,editItem){
+    const sectionKey = SECTION_KEYS[section] || section;
+    setShowContentForm({section:sectionKey,editItem});
+    setContentErr('');
+    if(editItem){
+      setContentForm({title:editItem.title||'',body:editItem.body||'',imageUrl:editItem.imageUrl||'',linkUrl:editItem.linkUrl||'',linkLabel:editItem.linkLabel||'',sortOrder:editItem.sortOrder||0});
+    } else {
+      setContentForm({title:'',body:'',imageUrl:'',linkUrl:'',linkLabel:'',sortOrder:0});
+    }
+  }
+
+  async function handleContentSave(e){
+    e.preventDefault();
+    setContentSaving(true);
+    setContentErr('');
+    try{
+      const {section,editItem}=showContentForm;
+      const method=editItem?'PUT':'POST';
+      const url=editItem?'/api/content?id='+editItem.id:'/api/content';
+      const r=await fetch(url,{method,headers:{'content-type':'application/json','x-admin-key':adminKey},body:JSON.stringify({...contentForm,section})});
+      if(!r.ok){const d=await r.json();setContentErr(d.error||'Save failed');setContentSaving(false);return;}
+      setShowContentForm(null);
+      fetchContent(adminKey);
+    }catch(err){setContentErr(err.message);}
+    setContentSaving(false);
+  }
+
+  async function handleContentDelete(id){
+    await fetch('/api/content?id='+id,{method:'DELETE',headers:{'x-admin-key':adminKey}});
+    fetchContent(adminKey);
+  }
+
   async function handleLogin(e) {
     e.preventDefault();
     setLoginErr('');
-    // Validate key by making a test POST with intentionally invalid body (will fail 400, not 401)
-    const r = await fetch('/api/internships', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-admin-key': keyInput },
-      body: JSON.stringify({}),
-    });
+    const r = await fetch('/api/admin/verify', { method: 'POST', headers: { 'x-admin-key': keyInput } });
     if (r.status === 401) { setLoginErr('Invalid admin key.'); return; }
-    // 400 = key valid but missing fields — that's fine, means key is correct
+    if (!r.ok) { setLoginErr('Server error — check Railway is running.'); return; }
     sessionStorage.setItem('adminKey', keyInput);
     setAdminKey(keyInput);
     fetchInternships(keyInput);
@@ -146,7 +237,6 @@ export default function AdminPage() {
       company: item.company || '',
       description: item.description || '',
       departments: item.departments || [],
-      semesters: item.semesters || [],
       stipend: item.stipend || '',
       location: item.location || '',
       skills: (item.skills || []).join(', '),
@@ -198,6 +288,122 @@ export default function AdminPage() {
     fetchInternships(adminKey);
   }
 
+  async function handleOdsImport(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setImporting(true);
+    setImportStatus('Parsing file…');
+    try {
+      // Handle both CJS and ESM module shapes
+      const xlsxMod = await import('xlsx');
+      const XLSX = xlsxMod.default || xlsxMod;
+
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
+      if (!wb.SheetNames.length) throw new Error('No sheets found in file');
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+      if (!rows.length) throw new Error('Sheet is empty');
+      setImportStatus(`Sheet has ${rows.length} rows, detecting format…`);
+
+      // ── Format A: labels in column A, each column = one internship ──
+      // Row n: "Text" | val1 | val2 | ...
+      // Row n: "HeadLine" | title1 | title2 | ...
+      const rowIdx = {};
+      rows.forEach((row, i) => {
+        const label = String(row[0] || '').trim().toLowerCase().replace(/\s+/g, '');
+        if (label === 'text') rowIdx.text = i;
+        else if (label === 'url') rowIdx.url = i;
+        else if (label === 'time') rowIdx.time = i;
+        else if (label === 'headline') rowIdx.headline = i;
+        else if (label === 'category') rowIdx.category = i;
+      });
+
+      let internshipsToImport = [];
+
+      if (rowIdx.headline !== undefined) {
+        // Format A found
+        const maxCols = rows.length > 0 ? Math.max(...rows.map(r => r.length)) : 0;
+        for (let col = 1; col < maxCols; col++) {
+          const title = String(rows[rowIdx.headline]?.[col] || '').trim();
+          if (!title) continue;
+          internshipsToImport.push({
+            title,
+            text:     String(rows[rowIdx.text]?.[col]     || '').trim(),
+            url:      String(rows[rowIdx.url]?.[col]      || '').trim(),
+            time:     String(rows[rowIdx.time]?.[col]     || '').trim(),
+            category: String(rows[rowIdx.category]?.[col] || '').trim(),
+          });
+        }
+      } else {
+        // ── Format B: header row, each row = one internship ──
+        // Row 0: HeadLine | Text | URL | Time | Category
+        // Row 1: title1   | text1| url1| ...
+        const headers = rows[0].map(h => String(h || '').trim().toLowerCase().replace(/\s+/g, ''));
+        const colOf = key => headers.findIndex(h => h === key || h.includes(key));
+        const hI = colOf('headline'), tI = colOf('text'), uI = colOf('url'),
+              tmI = colOf('time'), cI = colOf('category');
+
+        if (hI === -1) throw new Error(
+          `Could not find label rows or header columns.\n` +
+          `First column values found: ${rows.slice(0,6).map(r=>JSON.stringify(r[0])).join(', ')}`
+        );
+
+        for (let row = 1; row < rows.length; row++) {
+          const r = rows[row];
+          const title = String(r[hI] || '').trim();
+          if (!title) continue;
+          internshipsToImport.push({
+            title,
+            text:     tI  >= 0 ? String(r[tI]  || '').trim() : '',
+            url:      uI  >= 0 ? String(r[uI]  || '').trim() : '',
+            time:     tmI >= 0 ? String(r[tmI] || '').trim() : '',
+            category: cI  >= 0 ? String(r[cI]  || '').trim() : '',
+          });
+        }
+      }
+
+      setImportStatus(`Found ${internshipsToImport.length} internships, uploading…`);
+      let success = 0;
+      let firstError = '';
+
+      for (const item of internshipsToImport) {
+        setImportStatus(`Uploading ${success + 1}/${internshipsToImport.length}…`);
+        const departments = catToDepts(item.category);
+        const description = item.time ? `[${item.time}]\n\n${item.text}` : item.text;
+        const company = extractCompany(item.title) || item.title.split(' ')[0] || 'Unknown';
+        try {
+          const r = await fetch('/api/internships', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', 'x-admin-key': adminKey },
+            body: JSON.stringify({ title: item.title, company, description, departments, semesters: [], skills: [], applyLink: item.url }),
+          });
+          if (r.ok) {
+            success++;
+          } else if (!firstError) {
+            const d = await r.json().catch(() => ({}));
+            firstError = `HTTP ${r.status}: ${d.error || 'unknown error'}`;
+          }
+        } catch (e) {
+          if (!firstError) firstError = e.message;
+        }
+      }
+
+      const statusMsg = firstError
+        ? `Done — ${success}/${internshipsToImport.length} imported. First error: ${firstError}`
+        : `Done — ${success}/${internshipsToImport.length} imported`;
+      setImportStatus(statusMsg);
+      fetchInternships(adminKey);
+      setTimeout(() => setImportStatus(''), 6000);
+    } catch (err) {
+      setImportStatus('Error: ' + err.message);
+      setTimeout(() => setImportStatus(''), 8000);
+    }
+    setImporting(false);
+  }
+
   if (!adminKey) {
     return (
       <>
@@ -226,8 +432,15 @@ export default function AdminPage() {
       <div className="wrap">
         <div className="top">
           <div className="logo">Campus<span>Hub</span> Admin</div>
-          <div style={{display:'flex',gap:8}}>
+          <div style={{display:'flex',gap:8,alignItems:'flex-start',flexWrap:'wrap'}}>
             <button className="btn btn-p btn-sm" onClick={openNew}>+ New Internship</button>
+            <div>
+              <input ref={odsInputRef} type="file" accept=".ods,.obs,.xlsx,.xls,.csv" style={{display:'none'}} onChange={handleOdsImport}/>
+              <button className="btn btn-g btn-sm" onClick={() => odsInputRef.current?.click()} disabled={importing}>
+                {importing ? importStatus : '↑ Import ODS'}
+              </button>
+              {importStatus && !importing && <div className="import-status">{importStatus}</div>}
+            </div>
             <button className="btn btn-g btn-sm" onClick={() => { sessionStorage.removeItem('adminKey'); setAdminKey(''); }}>Sign out</button>
           </div>
         </div>
@@ -246,10 +459,19 @@ export default function AdminPage() {
           </div>
         </div>
 
+        <div className="section-tabs">
+          <button className={'stab'+(activeSection==='internships'?' on':'')} onClick={()=>setActiveSection('internships')}>Internships</button>
+          <button className={'stab'+(activeSection==='guide1'?' on':'')} onClick={()=>setActiveSection('guide1')}>Guide Topic 1</button>
+          <button className={'stab'+(activeSection==='guide2'?' on':'')} onClick={()=>setActiveSection('guide2')}>Guide Topic 2</button>
+          <button className={'stab'+(activeSection==='wellness'?' on':'')} onClick={()=>setActiveSection('wellness')}>Mental Health</button>
+        </div>
+
+        {activeSection==='internships'&&(
+        <>
         <h2>Internship Listings ({internships.length})</h2>
 
         {loading && <div className="empty">Loading…</div>}
-        {!loading && internships.length === 0 && <div className="empty">No internships yet. Add one!</div>}
+        {!loading && internships.length === 0 && <div className="empty">No internships yet. Add one or import an ODS file!</div>}
         {internships.map(item => (
           <div key={item.id} className="intern-row">
             <div style={{flex:1,minWidth:0}}>
@@ -263,7 +485,63 @@ export default function AdminPage() {
             </div>
           </div>
         ))}
+        </>
+        )}
       </div>
+
+
+      {/* CONTENT SECTIONS — Guide + Wellness */}
+      {activeSection!=='internships'&&(()=>{
+        const sectionMap={'guide1':{label:'Internship Guide — Topic 1',data:guideContent1},'guide2':{label:'Internship Guide — Topic 2',data:guideContent2},'wellness':{label:'Mental Health & Wellness',data:wellContent}};
+        const {label,data}=sectionMap[activeSection]||{};
+        return(
+          <>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+              <h2 style={{margin:0}}>{label}</h2>
+              <button className="btn btn-p btn-sm" onClick={()=>openContentForm(activeSection,null)}>+ Add Entry</button>
+            </div>
+            {data.length===0&&<div className="empty">No entries yet. Add one!</div>}
+            {data.map(e=>(
+              <div key={e.id} className="content-row">
+                <div style={{flex:1,minWidth:0}}>
+                  {e.title&&<div className="content-title">{e.title}</div>}
+                  {e.body&&<div className="content-body">{e.body}</div>}
+                  {e.imageUrl&&<div style={{fontSize:11,color:'#4f8dff',marginTop:2}}>Has image</div>}
+                  {e.linkUrl&&<div style={{fontSize:11,color:'#888',marginTop:2}}>Link: {e.linkLabel||e.linkUrl}</div>}
+                </div>
+                <div className="content-actions">
+                  <button className="btn btn-g btn-sm" onClick={()=>openContentForm(activeSection,e)}>Edit</button>
+                  <button className="btn btn-r btn-sm" onClick={()=>handleContentDelete(e.id)}>Delete</button>
+                </div>
+              </div>
+            ))}
+          </>
+        );
+      })()}
+
+      {/* CONTENT FORM MODAL */}
+      {showContentForm&&(
+        <div className="modal-bg" onClick={()=>setShowContentForm(null)}>
+          <div className="modal-box" onClick={e=>e.stopPropagation()}>
+            <div className="modal-title">{showContentForm.editItem?'Edit Entry':'New Entry'}</div>
+            <form onSubmit={handleContentSave}>
+              <div className="field"><label>Title</label><input value={contentForm.title} onChange={e=>setContentForm(f=>({...f,title:e.target.value}))} placeholder="Section heading"/></div>
+              <div className="field"><label>Body Text</label><textarea value={contentForm.body} onChange={e=>setContentForm(f=>({...f,body:e.target.value}))} placeholder="Main content…" style={{minHeight:100}}/></div>
+              <div className="field"><label>Image URL</label><input value={contentForm.imageUrl} onChange={e=>setContentForm(f=>({...f,imageUrl:e.target.value}))} placeholder="https://example.com/image.jpg"/></div>
+              <div className="row">
+                <div className="field"><label>Link URL</label><input value={contentForm.linkUrl} onChange={e=>setContentForm(f=>({...f,linkUrl:e.target.value}))} placeholder="https://…"/></div>
+                <div className="field"><label>Link Label</label><input value={contentForm.linkLabel} onChange={e=>setContentForm(f=>({...f,linkLabel:e.target.value}))} placeholder="Learn more"/></div>
+              </div>
+              <div className="field"><label>Sort Order</label><input type="number" value={contentForm.sortOrder} onChange={e=>setContentForm(f=>({...f,sortOrder:parseInt(e.target.value)||0}))} style={{width:80}}/></div>
+              {contentErr&&<div className="err">{contentErr}</div>}
+              <div className="modal-footer">
+                <button type="button" className="btn btn-g" onClick={()=>setShowContentForm(null)}>Cancel</button>
+                <button type="submit" className="btn btn-p" disabled={contentSaving}>{contentSaving?'Saving…':(showContentForm.editItem?'Save Changes':'Create')}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* FORM MODAL */}
       {showForm && (
@@ -291,16 +569,6 @@ export default function AdminPage() {
                   {DEPARTMENTS.map(d => (
                     <div key={d} className={'check-item'+(form.departments.includes(d)?' on':'')} onClick={()=>toggleArr('departments',d)}>
                       <input type="checkbox" readOnly checked={form.departments.includes(d)}/> {d}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="field">
-                <label>Eligible Semesters</label>
-                <div className="check-group">
-                  {SEMESTERS.map(s => (
-                    <div key={s} className={'check-item'+(form.semesters.includes(s)?' on':'')} onClick={()=>toggleArr('semesters',s)}>
-                      <input type="checkbox" readOnly checked={form.semesters.includes(s)}/> Sem {s}
                     </div>
                   ))}
                 </div>
