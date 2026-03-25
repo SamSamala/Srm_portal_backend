@@ -2,7 +2,9 @@
 const { getBugReports, updateBugReportStatus, deleteBugReport } = require('../../../lib/db');
 
 function checkAdmin(req, res) {
-  if (!process.env.ADMIN_KEY || req.headers['x-admin-key'] !== process.env.ADMIN_KEY) {
+  const key = (req.headers['x-admin-key'] || '').trim();
+  const expected = (process.env.ADMIN_KEY || '').trim();
+  if (!expected || key !== expected) {
     res.status(401).json({ error: 'Unauthorized' });
     return false;
   }

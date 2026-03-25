@@ -4,8 +4,9 @@ const redis = require('../../../lib/redis');
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
 
-  const secret = req.headers['x-admin-key'];
-  if (!secret || secret !== process.env.ADMIN_KEY) {
+  const secret = (req.headers['x-admin-key'] || '').trim();
+  const expected = (process.env.ADMIN_KEY || '').trim();
+  if (!secret || secret !== expected) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

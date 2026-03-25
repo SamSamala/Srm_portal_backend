@@ -130,6 +130,8 @@ export default function AdminPage() {
   const [deleteId, setDeleteId] = useState(null);
   const [users, setUsers] = useState(null);
   const [showUsers, setShowUsers] = useState(false);
+  const [subscribers, setSubscribers] = useState(null);
+  const [subActionLoading, setSubActionLoading] = useState('');
   const [importing, setImporting] = useState(false);
   const [importStatus, setImportStatus] = useState('');
   const odsInputRef = useRef(null);
@@ -145,7 +147,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     const k = typeof window !== 'undefined' ? sessionStorage.getItem('adminKey') : '';
-    if (k) { setAdminKey(k); fetchInternships(k); fetchUsers(k); fetchContent(k); }
+    if (k) { setAdminKey(k); fetchInternships(k); fetchUsers(k); fetchContent(k); fetchSubscribers(k); }
   }, []);
 
   async function fetchInternships(key) {
@@ -164,6 +166,27 @@ export default function AdminPage() {
       const d = await r.json();
       setUsers(d);
     } catch { setUsers({ count: 0, emails: [] }); }
+  }
+
+  async function fetchSubscribers(key) {
+    try {
+      const r = await fetch('/api/admin/subscribers', { headers: { 'x-admin-key': key } });
+      const d = await r.json();
+      setSubscribers(d.subscribers || []);
+    } catch { setSubscribers([]); }
+  }
+
+  async function handleSubAction(email, action) {
+    setSubActionLoading(email + action);
+    try {
+      await fetch('/api/admin/subscribers', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-admin-key': adminKey },
+        body: JSON.stringify({ email, action }),
+      });
+      await fetchSubscribers(adminKey);
+    } catch {}
+    setSubActionLoading('');
   }
 
   async function fetchContent(key) {
@@ -221,6 +244,8 @@ export default function AdminPage() {
     setAdminKey(keyInput);
     fetchInternships(keyInput);
     fetchUsers(keyInput);
+    fetchContent(keyInput);
+    fetchSubscribers(keyInput);
   }
 
   function openNew() {
@@ -457,6 +482,13 @@ export default function AdminPage() {
             <div style={{fontSize:28,fontWeight:800,color:'#22d17a',fontFamily:'monospace'}}>{internships.length}</div>
             <div style={{fontSize:11,color:'#666',marginTop:3}}>active postings</div>
           </div>
+          <div className="card" style={{flex:'1 1 160px',cursor:'pointer',minWidth:140}} onClick={()=>setActiveSection('subscribers')}>
+            <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'.07em',color:'#888',marginBottom:6}}>Pro Subscribers</div>
+            <div style={{fontSize:28,fontWeight:800,color:'#f59e0b',fontFamily:'monospace'}}>
+              {subscribers===null?'–':subscribers.filter(s=>s.isPro).length}
+            </div>
+            <div style={{fontSize:11,color:'#666',marginTop:3}}>active pro users</div>
+          </div>
         </div>
 
         <div className="section-tabs">
@@ -464,6 +496,7 @@ export default function AdminPage() {
           <button className={'stab'+(activeSection==='guide1'?' on':'')} onClick={()=>setActiveSection('guide1')}>Guide Topic 1</button>
           <button className={'stab'+(activeSection==='guide2'?' on':'')} onClick={()=>setActiveSection('guide2')}>Guide Topic 2</button>
           <button className={'stab'+(activeSection==='wellness'?' on':'')} onClick={()=>setActiveSection('wellness')}>Mental Health</button>
+          <button className={'stab'+(activeSection==='subscribers'?' on':'')} onClick={()=>setActiveSection('subscribers')}>Subscribers</button>
         </div>
 
         {activeSection==='internships'&&(
@@ -490,8 +523,58 @@ export default function AdminPage() {
       </div>
 
 
+      {/* SUBSCRIBERS SECTION */}
+      {activeSection==='subscribers'&&(
+        <>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16,flexWrap:'wrap',gap:10}}>
+            <h2 style={{margin:0}}>Pro Subscribers ({subscribers===null?'…':subscribers.filter(s=>s.isPro).length} active / {subscribers===null?'…':subscribers.length} total)</h2>
+            <button className="btn btn-g btn-sm" onClick={()=>fetchSubscribers(adminKey)}>↻ Refresh</button>
+          </div>
+          {subscribers===null&&<div className="empty">Loading…</div>}
+          {subscribers!==null&&subscribers.length===0&&<div className="empty">No subscribers yet.</div>}
+          {(subscribers||[]).map(s=>{
+            const expiry=s.currentPeriodEnd?new Date(s.currentPeriodEnd).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):null;
+            const grantBusy=subActionLoading===s.email+'grant';
+            const revokeBusy=subActionLoading===s.email+'revoke';
+            return(
+              <div key={s.email} style={{display:'flex',alignItems:'center',gap:12,padding:'10px 14px',
+                marginBottom:8,borderRadius:10,border:'1px solid rgba(255,255,255,.08)',
+                background:'rgba(255,255,255,.03)',flexWrap:'wrap'}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:600,wordBreak:'break-all'}}>{s.email}</div>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginTop:3,flexWrap:'wrap'}}>
+                    <span style={{fontSize:11,padding:'2px 8px',borderRadius:20,fontWeight:700,
+                      background:s.isPro?'rgba(245,158,11,.15)':'rgba(148,163,184,.1)',
+                      color:s.isPro?'#f59e0b':'#888'}}>
+                      {s.isPro?'PRO':'FREE'}
+                    </span>
+                    {expiry&&<span style={{fontSize:11,color:'#666'}}>Expires {expiry}</span>}
+                  </div>
+                </div>
+                <div style={{display:'flex',gap:8,flexShrink:0}}>
+                  {!s.isPro&&(
+                    <button className="btn btn-p btn-sm" disabled={grantBusy}
+                      onClick={()=>handleSubAction(s.email,'grant')}>
+                      {grantBusy?'…':'Grant Pro'}
+                    </button>
+                  )}
+                  {s.isPro&&(
+                    <button className="btn btn-r btn-sm" disabled={revokeBusy}
+                      onClick={()=>handleSubAction(s.email,'revoke')}>
+                      {revokeBusy?'…':'Revoke'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          {/* Grant pro to any email not yet in list */}
+          <GrantNewUser adminKey={adminKey} onDone={()=>fetchSubscribers(adminKey)}/>
+        </>
+      )}
+
       {/* CONTENT SECTIONS — Guide + Wellness */}
-      {activeSection!=='internships'&&(()=>{
+      {activeSection!=='internships'&&activeSection!=='subscribers'&&(()=>{
         const sectionMap={'guide1':{label:'Internship Guide — Topic 1',data:guideContent1},'guide2':{label:'Internship Guide — Topic 2',data:guideContent2},'wellness':{label:'Mental Health & Wellness',data:wellContent}};
         const {label,data}=sectionMap[activeSection]||{};
         return(
@@ -627,5 +710,39 @@ export default function AdminPage() {
         </div>
       )}
     </>
+  );
+}
+
+function GrantNewUser({ adminKey, onDone }) {
+  const [email, setEmail] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+  async function handle(e) {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setBusy(true); setMsg('');
+    try {
+      const r = await fetch('/api/admin/subscribers', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-admin-key': adminKey },
+        body: JSON.stringify({ email: email.trim(), action: 'grant' }),
+      });
+      const d = await r.json();
+      if (r.ok) { setMsg('Pro granted to ' + email.trim()); setEmail(''); onDone(); }
+      else setMsg('Error: ' + (d.error || 'unknown'));
+    } catch { setMsg('Network error'); }
+    setBusy(false);
+  }
+  return (
+    <div style={{marginTop:24,padding:'16px',borderRadius:10,border:'1px dashed rgba(79,141,255,.3)',background:'rgba(79,141,255,.04)'}}>
+      <div style={{fontSize:12,fontWeight:700,color:'#888',marginBottom:10,textTransform:'uppercase',letterSpacing:'.06em'}}>Grant Pro to any user</div>
+      <form onSubmit={handle} style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+        <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="student@srmist.edu.in"
+          style={{flex:1,minWidth:200,padding:'8px 12px',borderRadius:8,border:'1px solid rgba(255,255,255,.12)',
+            background:'rgba(255,255,255,.05)',color:'inherit',fontSize:13}}/>
+        <button type="submit" className="btn btn-p btn-sm" disabled={busy}>{busy?'…':'Grant Pro'}</button>
+      </form>
+      {msg&&<div style={{marginTop:8,fontSize:12,color:msg.startsWith('Error')?'#f87171':'#22d17a'}}>{msg}</div>}
+    </div>
   );
 }
