@@ -1273,6 +1273,11 @@ export default function Dashboard({
                           </table>
                         </div>
                       </div>
+                      <div style={{marginTop:14}}>
+                        <button className="pred-btn" onClick={()=>{const t=new Date();const pad=n=>String(n).padStart(2,'0');const fmt=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());setPredFrom(fmt(t));const t2=new Date(t);t2.setDate(t2.getDate()+3);setPredTo(fmt(t2));setPredResult(null);setShowPredModal(true);}}>
+                          Predict Attendance
+                        </button>
+                      </div>
                     </>
                   )}
                 </>
@@ -1358,11 +1363,6 @@ export default function Dashboard({
                     Calendar showing calculated day orders. Log in again to load official planner data.
                   </p>}
                   <p style={{marginTop:10,fontSize:11,color:'var(--text3)'}}>Tap any date to view that day's timetable.</p>
-                  <div style={{marginTop:14}}>
-                    <button className="pred-btn" onClick={()=>{const t=new Date();const pad=n=>String(n).padStart(2,'0');const fmt=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());setPredFrom(fmt(t));const t2=new Date(t);t2.setDate(t2.getDate()+3);setPredTo(fmt(t2));setPredResult(null);setShowPredModal(true);}}>
-                      Predict Attendance
-                    </button>
-                  </div>
                 </>
               )}
 
