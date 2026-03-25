@@ -1243,6 +1243,11 @@ export default function Dashboard({
               {tab==='attendance'&&(
                 <>
                   <div className="seclbl">Attendance</div>
+                  <div style={{marginBottom:14}}>
+                    <button className="pred-btn" onClick={()=>{const t=new Date();const pad=n=>String(n).padStart(2,'0');const fmt=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());setPredFrom(fmt(t));const t2=new Date(t);t2.setDate(t2.getDate()+3);setPredTo(fmt(t2));setPredResult(null);setShowPredModal(true);}}>
+                      Predict Attendance
+                    </button>
+                  </div>
                   {att.length===0?<div className="empty">No data.</div>:(
                     <>
                       <div className="attlist">{att.map((c,i)=><AttCard key={i} c={c} pCol={pCol}/>)}</div>
@@ -1272,11 +1277,6 @@ export default function Dashboard({
                             </tbody>
                           </table>
                         </div>
-                      </div>
-                      <div style={{marginTop:14}}>
-                        <button className="pred-btn" onClick={()=>{const t=new Date();const pad=n=>String(n).padStart(2,'0');const fmt=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());setPredFrom(fmt(t));const t2=new Date(t);t2.setDate(t2.getDate()+3);setPredTo(fmt(t2));setPredResult(null);setShowPredModal(true);}}>
-                          Predict Attendance
-                        </button>
                       </div>
                     </>
                   )}
