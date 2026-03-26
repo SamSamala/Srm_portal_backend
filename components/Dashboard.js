@@ -68,7 +68,7 @@ function MarksGraph({ tests, dark }) {
     <div className="mgraph">
       <div className="mgraph-hd">
         <div className="mgraph-leg"><div className="mgraph-dot" style={{background:acc}}/><span>Percentage</span></div>
-        {totalMax>0&&<div className="mgraph-tot" style={{color:acc}}>{Math.round(totalScored*100/totalMax)}% &nbsp;<span style={{fontWeight:400,fontSize:9,color:t3}}>({totalScored}/{totalMax})</span></div>}
+        {totalMax>0&&<div className="mgraph-tot" style={{color:acc}}>{(totalScored*100/totalMax).toFixed(2)}% &nbsp;<span style={{fontWeight:400,fontSize:9,color:t3}}>({parseFloat(totalScored.toFixed(2))}/{totalMax})</span></div>}
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:H,display:'block',overflow:'visible'}}>
         {/* Horizontal grid lines */}
@@ -204,6 +204,12 @@ input,button,select{font-family:inherit;}
 .navit.on{color:var(--accent);background:${d?'rgba(79,141,255,.1)':'rgba(37,99,235,.08)'};font-weight:600;}
 
 /* BOTTOM NAV */
+.a2hs-banner{position:fixed;bottom:calc(var(--bnav) + env(safe-area-inset-bottom,0px) + 4px);left:8px;right:8px;z-index:210;
+  display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;
+  background:${d?'rgba(15,23,42,.96)':'rgba(255,255,255,.97)'};
+  border:1px solid var(--border);backdrop-filter:blur(16px);box-shadow:0 4px 20px rgba(0,0,0,.15);}
+.a2hs-btn{padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.a2hs-close{background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;padding:0 2px;line-height:1;}
 .bnav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;
   background:${d?'rgba(4,6,13,.95)':'rgba(245,240,232,.97)'};
   border-top:1px solid var(--border);backdrop-filter:blur(24px);
@@ -879,6 +885,32 @@ export default function Dashboard({
   useEffect(()=>{const iv=setInterval(()=>setTimeTick(t=>t+1),60000);return()=>clearInterval(iv);},[]);
   const [showWellnessModal,setShowWellnessModal]=useState(false);
   const [wellnessContent,setWellnessContent]=useState(null);
+  const [showBugModal,setShowBugModal]=useState(false);
+  const [bugSubject,setBugSubject]=useState('');
+  const [bugDesc,setBugDesc]=useState('');
+  const [bugStatus,setBugStatus]=useState(null);
+  const [deferredPrompt,setDeferredPrompt]=useState(null);
+  const [showInstallBanner,setShowInstallBanner]=useState(false);
+  const [showIosInstructions,setShowIosInstructions]=useState(false);
+
+  // Add-to-homescreen logic
+  useEffect(()=>{
+    if(localStorage.getItem('srm_a2hs_dismissed')) return;
+    const isIos=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+    const isStandalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+    if(isStandalone) return; // already installed
+    if(isIos){setShowIosInstructions(true);return;}
+    const handler=(e)=>{e.preventDefault();setDeferredPrompt(e);setShowInstallBanner(true);};
+    window.addEventListener('beforeinstallprompt',handler);
+    return()=>window.removeEventListener('beforeinstallprompt',handler);
+  },[]);
+
+  function handleInstall(){
+    if(!deferredPrompt)return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(()=>{setDeferredPrompt(null);setShowInstallBanner(false);localStorage.setItem('srm_a2hs_dismissed','1');});
+  }
+  function dismissInstall(){setShowInstallBanner(false);setShowIosInstructions(false);localStorage.setItem('srm_a2hs_dismissed','1');}
 
   useEffect(()=>{const info=getPlannerInfo(new Date(),plannerData);if(info?.order)setActiveDay('Day '+info.order);},[plannerData]);
 
@@ -929,6 +961,15 @@ export default function Dashboard({
     } catch(e) {
       setPredResult({ error: 'Network error. Try again.' });
     }
+  }
+  async function submitBug(){
+    if(!bugSubject.trim()||!bugDesc.trim())return;
+    setBugStatus('sending');
+    try{
+      const r=await fetch('/api/bug-report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject:bugSubject.trim(),description:bugDesc.trim()})});
+      if(r.ok){setBugStatus('sent');setBugSubject('');setBugDesc('');}
+      else{const d=await r.json();setBugStatus(d.error||'Failed');}
+    }catch{setBugStatus('Network error');}
   }
 
   const att=data?.attendance||[], marks=data?.marks||[];
@@ -1209,7 +1250,7 @@ export default function Dashboard({
                         </div>
                         <div className="scard" style={{cursor:'pointer'}} onClick={()=>goTab('marks')}>
                           <div className="scard-lbl">Internal Marks</div>
-                          <div className="scard-val" style={{color:'var(--accent)'}}>{totMax>0?(totScored.toFixed(1)+' / '+totMax):'–'}</div>
+                          <div className="scard-val" style={{color:'var(--accent)'}}>{totMax>0?(totScored.toFixed(2)+' / '+totMax):'–'}</div>
                           <div className="scard-sub">across {marks.length} subjects</div>
                           <div className="scard-bar" style={{background:'linear-gradient(90deg,var(--accent),transparent)'}}/>
                         </div>
@@ -1234,12 +1275,18 @@ export default function Dashboard({
                           <div className="scard-wellness-row">
                             <div className="scard-wellness-txt">
                               <div className="scard-lbl">Mental Health &amp; Wellness</div>
-                              <div className="scard-wellness-name">You’re not alone — support &amp; resources</div>
+                              <div className="scard-wellness-name">You're not alone — support &amp; resources</div>
                               <div className="scard-sub">Explore tips, guides and stress management tools</div>
                             </div>
                             <div className="scard-wellness-ico">🌿</div>
                           </div>
                           <div className="scard-bar" style={{background:'linear-gradient(90deg,var(--green),transparent)'}}/>
+                        </div>
+                        <div className="scard" style={{cursor:'pointer'}} onClick={()=>{setBugStatus(null);setShowBugModal(true);}}>
+                          <div className="scard-lbl">Report a Bug</div>
+                          <div className="scard-act-ico" style={{fontSize:22}}>🐛</div>
+                          <div className="scard-sub">Something broken? Let us know</div>
+                          <div className="scard-bar" style={{background:'linear-gradient(90deg,var(--red),transparent)'}}/>
                         </div>
                       </>);
                       })()}
@@ -1311,7 +1358,7 @@ export default function Dashboard({
                                   {m.tests.map((t,j)=>(
                                     <div key={j} className="tpill">
                                       <div className="tpill-n">{t.name}</div>
-                                      <div className="tpill-s" style={{color:t.scored===null?'var(--red)':'var(--green)'}}>{t.scored===null?'AB':t.scored}</div>
+                                      <div className="tpill-s" style={{color:t.scored===null?'var(--red)':'var(--green)'}}>{t.scored===null?'AB':parseFloat(Number(t.scored).toFixed(2))}</div>
                                       <div className="tpill-m">/{t.maxMarks}</div>
                                     </div>
                                   ))}
@@ -1413,6 +1460,7 @@ export default function Dashboard({
                       Internship Guide
                     </button>
                     <div className="seclbl">Internships</div>
+                    <div style={{fontSize:11,color:'var(--text3)',marginBottom:8}}>Last updated: 25 March 2026</div>
                     <div className="int-filters">
                       <select value={deptFilter} onChange={e=>setDeptFilter(e.target.value)}>
                         <option value="">All Departments</option>
@@ -1447,6 +1495,30 @@ export default function Dashboard({
             </>
           )}
         </div>
+
+        {/* ADD TO HOMESCREEN BANNER — Android */}
+        {showInstallBanner&&(
+          <div className="a2hs-banner">
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontWeight:700,fontSize:13}}>Add to Home Screen</div>
+              <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>Quick access like a native app</div>
+            </div>
+            <button onClick={handleInstall} className="a2hs-btn">Install</button>
+            <button onClick={dismissInstall} className="a2hs-close">&times;</button>
+          </div>
+        )}
+        {/* ADD TO HOMESCREEN — iOS instructions */}
+        {showIosInstructions&&(
+          <div className="a2hs-banner">
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontWeight:700,fontSize:13}}>Add to Home Screen</div>
+              <div style={{fontSize:11,color:'var(--text3)',marginTop:2,lineHeight:1.5}}>
+                Tap the <strong>Share</strong> button <span style={{fontSize:15,verticalAlign:'middle'}}>&#x2191;&#xFE0E;</span> at the bottom of Safari, then tap <strong>&quot;Add to Home Screen&quot;</strong>.
+              </div>
+            </div>
+            <button onClick={dismissInstall} className="a2hs-close">&times;</button>
+          </div>
+        )}
 
         {/* MOBILE BOTTOM NAV */}
         <div className="bnav">
@@ -1599,6 +1671,34 @@ export default function Dashboard({
               <button className="int-modal-close" onClick={()=>setShowWellnessModal(false)}>✕</button>
             </div>
             <ContentList entries={wellnessContent}/>
+          </div>
+        </div>
+      )}
+      {showBugModal&&(
+        <div className="modal-overlay" onClick={()=>setShowBugModal(false)}>
+          <div className="bug-modal" onClick={e=>e.stopPropagation()} style={{background:'var(--surf)',borderRadius:16,padding:20,maxWidth:360,width:'90%',margin:'auto',position:'relative'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+              <div style={{fontWeight:700,fontSize:15}}>Report a Bug</div>
+              <button className="int-modal-close" onClick={()=>setShowBugModal(false)}>✕</button>
+            </div>
+            {bugStatus==='sent'?(
+              <div style={{textAlign:'center',padding:'18px 0'}}>
+                <div style={{fontSize:28,marginBottom:8}}>✓</div>
+                <div style={{fontSize:13,color:'var(--green)',fontWeight:600}}>Bug reported! Thanks for helping us improve.</div>
+              </div>
+            ):(
+              <>
+                <input value={bugSubject} onChange={e=>setBugSubject(e.target.value)} placeholder="Subject" maxLength={200}
+                  style={{width:'100%',padding:'8px 10px',borderRadius:8,border:'1px solid var(--border)',background:'var(--surf2)',color:'var(--text)',fontSize:13,marginBottom:8,boxSizing:'border-box'}}/>
+                <textarea value={bugDesc} onChange={e=>setBugDesc(e.target.value)} placeholder="Describe the bug..." maxLength={5000} rows={3}
+                  style={{width:'100%',padding:'8px 10px',borderRadius:8,border:'1px solid var(--border)',background:'var(--surf2)',color:'var(--text)',fontSize:13,resize:'vertical',marginBottom:10,boxSizing:'border-box'}}/>
+                {bugStatus&&bugStatus!=='sending'&&<div style={{fontSize:11,color:'var(--red)',marginBottom:6}}>{bugStatus}</div>}
+                <button onClick={submitBug} disabled={bugStatus==='sending'||!bugSubject.trim()||!bugDesc.trim()}
+                  style={{width:'100%',padding:'9px 0',borderRadius:8,border:'none',background:'var(--accent)',color:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',opacity:bugStatus==='sending'?.6:1}}>
+                  {bugStatus==='sending'?'Sending...':'Submit'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
