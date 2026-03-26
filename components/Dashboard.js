@@ -130,7 +130,6 @@ input,button,select{font-family:inherit;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-@keyframes pulse2{0%,100%{opacity:1}50%{opacity:.4}}
 
 /* BG */
 .dash-bg{position:fixed;inset:0;pointer-events:none;z-index:0;
@@ -495,20 +494,6 @@ tbody td{padding:11px 14px;font-size:12px;vertical-align:middle;}
   .auth-form-panel{padding:24px 20px;}
 }
 
-/* PROGRESS STEPS */
-.prog-steps{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
-.prog-step{display:flex;align-items:center;gap:10px;padding:8px 12px;
-  background:var(--surf2);border:1px solid var(--border);border-radius:9px;transition:all .3s;}
-.prog-step.active{background:${d?'rgba(79,141,255,.08)':'rgba(37,99,235,.05)'};border-color:${d?'rgba(79,141,255,.2)':'rgba(37,99,235,.15)'};}
-.prog-step.done{border-color:${d?'rgba(34,209,122,.2)':'rgba(5,150,105,.2)'};}
-.prog-ico{width:20px;height:20px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--border);transition:all .3s;}
-.prog-step.done .prog-ico{background:${d?'rgba(34,209,122,.15)':'rgba(5,150,105,.1)'};border-color:${d?'rgba(34,209,122,.4)':'rgba(5,150,105,.3)'};}
-.prog-step.active .prog-ico{border-color:${d?'rgba(79,141,255,.4)':'rgba(37,99,235,.3)'};}
-.prog-lbl{font-size:12px;font-weight:500;flex:1;transition:color .3s;}
-.prog-step.active .prog-lbl{color:var(--text);font-weight:600;}
-.prog-step.done .prog-lbl{color:var(--green);}
-.prog-step:not(.active):not(.done) .prog-lbl{color:var(--text3);}
-.prog-time{font-size:10px;color:var(--text3);font-family:'Varela Round',sans-serif;}
 
 /* RESPONSIVE */
 @media(min-width:768px){
@@ -593,14 +578,6 @@ tbody td{padding:11px 14px;font-size:12px;vertical-align:middle;}
 
 }
 
-// -- Loading steps ------------------------------------------------------------
-const LOGIN_STEPS = [
-  {label:'Connecting to SRM portal',  dur:6},
-  {label:'Verifying credentials',     dur:5},
-  {label:'Loading attendance data',   dur:10},
-  {label:'Loading timetable',         dur:8},
-  {label:'Building your dashboard',   dur:4},
-];
 
 function SkeletonDash() {
   return (
@@ -849,63 +826,6 @@ function AttCard({c,pCol}){
   );
 }
 
-// -- Loading Screen with real progress ---------------------------------------
-function LoginProgress({steps,startTime,dark,isFirstLogin}){
-  const [elapsed,setElapsed]=useState(0);
-  const totalDur=steps.reduce((s,st)=>s+st.dur,0);
-  useEffect(()=>{
-    const iv=setInterval(()=>setElapsed((Date.now()-startTime)/1000),300);
-    return()=>clearInterval(iv);
-  },[startTime]);
-  const pct=Math.min(Math.round((elapsed/totalDur)*100),95);
-  let stepIdx=0,acc=0;
-  for(let i=0;i<steps.length;i++){if(elapsed>=acc)stepIdx=i;acc+=steps[i].dur;}
-  stepIdx=Math.min(stepIdx,steps.length-1);
-  const remaining=Math.max(0,Math.round(totalDur-elapsed));
-
-  return(
-    <div className="auth-wrap">
-      <div className="auth-grid"/>
-      <div className="auth-card">
-        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:22}}>
-          <div className="lmark">C</div>
-          <span style={{fontFamily:'Playfair Display',fontSize:14,fontWeight:700}}>CampusHub</span>
-        </div>
-        <div className="loading-bar-wrap" style={{position:'static',marginBottom:8,borderRadius:4,overflow:'hidden',height:4,background:'var(--surf2)'}}>
-          <div className="loading-bar" style={{width:pct+'%',height:4}}/>
-        </div>
-        <div style={{display:'flex',justifyContent:'space-between',marginBottom:16}}>
-          <span style={{fontSize:11,color:'var(--text3)',fontFamily:'Varela Round'}}>{pct}%</span>
-          <span style={{fontSize:11,color:'var(--text3)',fontFamily:'Varela Round'}}>~{remaining}s</span>
-        </div>
-        <div className="prog-steps">
-          {steps.map((st,i)=>{
-            const done=i<stepIdx, active=i===stepIdx;
-            return(
-              <div key={i} className={'prog-step'+(done?' done':active?' active':'')}>
-                <div className="prog-ico">
-                  {done?<svg width="9"height="9"viewBox="0 0 9 9"fill="none"><path d="M1.5 4.5L3.5 6.5L7.5 2.5"stroke={dark?'#22d17a':'#059669'}strokeWidth="1.5"strokeLinecap="round"strokeLinejoin="round"/></svg>
-                  :active?<div style={{width:6,height:6,borderRadius:'50%',background:'var(--accent)',animation:'pulse2 1s ease-in-out infinite alternate'}}/>
-                  :null}
-                </div>
-                <span className="prog-lbl">{st.label}</span>
-                {done&&<span style={{fontSize:9,color:dark?'rgba(34,209,122,.5)':'rgba(5,150,105,.6)',fontFamily:'Varela Round'}}>done</span>}
-                {active&&<div style={{width:13,height:13,borderRadius:'50%',border:'2px solid var(--border)',borderTopColor:'var(--accent)',animation:'spin .7s linear infinite',flexShrink:0}}/>}
-                {!done&&!active&&<span className="prog-time">~{st.dur}s</span>}
-              </div>
-            );
-          })}
-        </div>
-        <p style={{fontSize:11,color:'var(--text3)',textAlign:'center',marginTop:14,lineHeight:1.6}}>
-          SRM's portal is slow by nature.<br/>Please keep this tab open.
-        </p>
-        {isFirstLogin&&<p style={{fontSize:11,color:'var(--accent)',textAlign:'center',marginTop:8,lineHeight:1.5}}>
-          This might take a while if you are logging in for the first time.
-        </p>}
-      </div>
-    </div>
-  );
-}
 
 // -- Main Dashboard export ----------------------------------------------------
 function timeAgo(ts) {
@@ -942,7 +862,6 @@ export default function Dashboard({
 }) {
   const [tab,setTab]=useState('dashboard');
   const [activeDay,setActiveDay]=useState('Day 1');
-  const [loginStartTime,setLoginStartTime]=useState(null);
   const [plannerData,setPlannerData]=useState(null);
   const [showLogoutModal,setShowLogoutModal]=useState(false);
   const [internships,setInternships]=useState(null);
@@ -967,7 +886,6 @@ export default function Dashboard({
     if(!data) return;
     if(data.plannerData) setPlannerData(data.plannerData);
   },[data]);
-  useEffect(()=>{if(loading)setLoginStartTime(Date.now());},[loading]);
   // Pre-fetch internship count on mount so dashboard card always shows a number
   useEffect(()=>{
     if(internCount!==null)return;
@@ -1048,10 +966,19 @@ export default function Dashboard({
   ];
 
   // -- Loading screen --
-  if(loading&&loginStartTime) return (
+  if(loading) return (
     <>
       <style>{getDashCSS(dark)}</style>
-      <LoginProgress steps={LOGIN_STEPS} startTime={loginStartTime} dark={dark} isFirstLogin={isFirstLogin}/>
+      <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',
+        justifyContent:'center',background:'var(--bg)',gap:14,fontFamily:'Plus Jakarta Sans,sans-serif'}}>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <div className="lmark">C</div>
+          <span style={{fontFamily:'Playfair Display',fontSize:15,fontWeight:700,color:'var(--text)'}}>CampusHub</span>
+        </div>
+        <div style={{width:22,height:22,border:'2.5px solid var(--border)',borderTopColor:'var(--accent)',
+          borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
+        <span style={{fontSize:13,color:'var(--text2)'}}>Signing in...</span>
+      </div>
     </>
   );
 
@@ -1132,7 +1059,6 @@ export default function Dashboard({
               </button>
             </form>
             {error&&<div className="auth-err"><span>⚠</span><span>{error}</span></div>}
-            <div className="auth-note"><span>🔒</span><span>Credentials are only used to log into academia.srmist.edu.in on your behalf and are never stored.</span></div>
             <button className="btn-g" style={{width:'100%',marginTop:10,fontSize:13}} onClick={()=>setView('landing')}>← Back to home</button>
           </div>
         </div>
