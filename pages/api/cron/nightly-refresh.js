@@ -1,21 +1,13 @@
 // pages/api/cron/nightly-refresh.js
 // Called nightly at 1 AM to re-login all users with saved credentials and refresh their cache.
-// Secure with CRON_SECRET env var. Set up a cron job on Railway or cron-job.org to hit:
-//   POST https://campushub.ampiyflow.com/api/cron/nightly-refresh
-//   Header: x-cron-secret: <CRON_SECRET>
-
-export const config = {
-  api: { bodyParser: false, responseLimit: false, externalResolver: true },
-};
+// Trigger via browser or cron: GET /api/cron/nightly-refresh?secret=<CRON_SECRET>
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).end();
-
-  // Authenticate cron caller
-  const secret = (req.headers['x-cron-secret'] || '').trim();
+  // Accept secret from query param OR header
+  const secret = (req.query.secret || req.headers['x-cron-secret'] || '').trim();
   const expected = (process.env.CRON_SECRET || '').trim();
   if (!expected || secret !== expected) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: 'Unauthorized — set CRON_SECRET env var and pass ?secret=<value>' });
   }
 
   const db = require('../../../lib/db');

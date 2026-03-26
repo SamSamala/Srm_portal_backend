@@ -11,5 +11,6 @@ export function middleware(request) {
 }
 
 export const config = {
-  matcher: '/api/:path*',
+  // Exclude /api/cron/* so it runs directly on Railway without being proxied back through Vercel
+  matcher: '/api/((?!cron/).*)' ,
 };
