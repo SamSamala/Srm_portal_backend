@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0e17"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.05"/>
+    </linearGradient>
+    <filter id="blur1">
+      <feGaussianBlur stdDeviation="60"/>
+    </filter>
+    <filter id="blur2">
+      <feGaussianBlur stdDeviation="80"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Ambient glow blobs -->
+  <circle cx="200" cy="150" r="250" fill="#6366f1" opacity="0.12" filter="url(#blur1)"/>
+  <circle cx="1050" cy="480" r="220" fill="#3b82f6" opacity="0.10" filter="url(#blur2)"/>
+  <circle cx="600" cy="315" r="300" fill="#4f46e5" opacity="0.06" filter="url(#blur1)"/>
+
+  <!-- Grid dots pattern (subtle) -->
+  <pattern id="dots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+    <circle cx="20" cy="20" r="1" fill="rgba(255,255,255,0.04)"/>
+  </pattern>
+  <rect width="1200" height="630" fill="url(#dots)"/>
+
+  <!-- Top accent bar -->
+  <rect x="0" y="0" width="1200" height="4" fill="url(#accent)"/>
+
+  <!-- Logo area: favicon icon -->
+  <rect x="80" y="70" width="72" height="72" rx="16" fill="url(#accent)"/>
+  <!-- Graduation cap in logo -->
+  <polygon points="116,83 148,97 116,111 84,97" fill="white"/>
+  <path d="M93,101 L93,118 Q93,127 116,127 Q139,127 139,118 L139,101" fill="rgba(255,255,255,0.9)"/>
+  <line x1="148" y1="97" x2="148" y2="110" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <line x1="144" y1="110" x2="152" y2="110" stroke="white" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- App name next to logo -->
+  <text x="172" y="100" font-family="system-ui,-apple-system,sans-serif" font-weight="700" font-size="28" fill="rgba(255,255,255,0.9)" letter-spacing="0.5">SRM Portal</text>
+  <text x="172" y="128" font-family="system-ui,-apple-system,sans-serif" font-weight="400" font-size="16" fill="rgba(255,255,255,0.4)">srm-campus-hub.vercel.app</text>
+
+  <!-- Main headline -->
+  <text x="80" y="280" font-family="system-ui,-apple-system,sans-serif" font-weight="800" font-size="72" fill="white" letter-spacing="-1">Works on</text>
+  <text x="80" y="370" font-family="system-ui,-apple-system,sans-serif" font-weight="800" font-size="72" fill="url(#accent)" letter-spacing="-1">WiFi + Mobile Data</text>
+
+  <!-- Sub-headline -->
+  <text x="80" y="430" font-family="system-ui,-apple-system,sans-serif" font-weight="400" font-size="26" fill="rgba(255,255,255,0.55)">Your SRM academics, finally clear.</text>
+
+  <!-- Divider line -->
+  <rect x="80" y="468" width="120" height="3" rx="2" fill="url(#accent)"/>
+
+  <!-- Bottom feature pills -->
+  <!-- Pill 1: Attendance -->
+  <rect x="80" y="495" width="180" height="44" rx="22" fill="rgba(99,102,241,0.18)" stroke="rgba(99,102,241,0.4)" stroke-width="1"/>
+  <text x="170" y="523" font-family="system-ui,-apple-system,sans-serif" font-weight="600" font-size="17" fill="rgba(255,255,255,0.85)" text-anchor="middle">Attendance</text>
+
+  <!-- Pill 2: Marks -->
+  <rect x="276" y="495" width="140" height="44" rx="22" fill="rgba(99,102,241,0.18)" stroke="rgba(99,102,241,0.4)" stroke-width="1"/>
+  <text x="346" y="523" font-family="system-ui,-apple-system,sans-serif" font-weight="600" font-size="17" fill="rgba(255,255,255,0.85)" text-anchor="middle">Marks</text>
+
+  <!-- Pill 3: Timetable -->
+  <rect x="432" y="495" width="170" height="44" rx="22" fill="rgba(99,102,241,0.18)" stroke="rgba(99,102,241,0.4)" stroke-width="1"/>
+  <text x="517" y="523" font-family="system-ui,-apple-system,sans-serif" font-weight="600" font-size="17" fill="rgba(255,255,255,0.85)" text-anchor="middle">Timetable</text>
+
+  <!-- Pill 4: Calendar -->
+  <rect x="618" y="495" width="160" height="44" rx="22" fill="rgba(99,102,241,0.18)" stroke="rgba(99,102,241,0.4)" stroke-width="1"/>
+  <text x="698" y="523" font-family="system-ui,-apple-system,sans-serif" font-weight="600" font-size="17" fill="rgba(255,255,255,0.85)" text-anchor="middle">Calendar</text>
+
+  <!-- Right side: decorative UI card mockup -->
+  <rect x="780" y="140" width="360" height="340" rx="18" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+
+  <!-- Card header -->
+  <rect x="780" y="140" width="360" height="52" rx="18" fill="rgba(255,255,255,0.06)"/>
+  <rect x="780" y="172" width="360" height="20" fill="rgba(255,255,255,0.06)"/>
+  <circle cx="812" cy="166" r="10" fill="rgba(99,102,241,0.6)"/>
+  <text x="832" y="171" font-family="system-ui" font-weight="600" font-size="14" fill="rgba(255,255,255,0.7)">Attendance Overview</text>
+
+  <!-- Attendance bars -->
+  <rect x="808" y="218" width="220" height="10" rx="5" fill="rgba(255,255,255,0.08)"/>
+  <rect x="808" y="218" width="198" height="10" rx="5" fill="url(#accent)"/>
+  <text x="808" y="212" font-family="system-ui" font-size="11" fill="rgba(255,255,255,0.4)">Mathematics</text>
+  <text x="1040" y="228" font-family="system-ui" font-weight="700" font-size="12" fill="rgba(99,241,180,1)">90%</text>
+
+  <rect x="808" y="254" width="220" height="10" rx="5" fill="rgba(255,255,255,0.08)"/>
+  <rect x="808" y="254" width="154" height="10" rx="5" fill="url(#accent)" opacity="0.8"/>
+  <text x="808" y="248" font-family="system-ui" font-size="11" fill="rgba(255,255,255,0.4)">Data Structures</text>
+  <text x="1040" y="264" font-family="system-ui" font-weight="700" font-size="12" fill="rgba(251,191,36,1)">70%</text>
+
+  <rect x="808" y="290" width="220" height="10" rx="5" fill="rgba(255,255,255,0.08)"/>
+  <rect x="808" y="290" width="176" height="10" rx="5" fill="url(#accent)" opacity="0.9"/>
+  <text x="808" y="284" font-family="system-ui" font-size="11" fill="rgba(255,255,255,0.4)">AI &amp; ML</text>
+  <text x="1040" y="300" font-family="system-ui" font-weight="700" font-size="12" fill="rgba(99,241,180,1)">80%</text>
+
+  <rect x="808" y="326" width="220" height="10" rx="5" fill="rgba(255,255,255,0.08)"/>
+  <rect x="808" y="326" width="121" height="10" rx="5" fill="rgba(239,68,68,0.7)"/>
+  <text x="808" y="320" font-family="system-ui" font-size="11" fill="rgba(255,255,255,0.4)">DBMS</text>
+  <text x="1040" y="336" font-family="system-ui" font-weight="700" font-size="12" fill="rgba(239,68,68,1)">55%</text>
+
+  <rect x="808" y="362" width="220" height="10" rx="5" fill="rgba(255,255,255,0.08)"/>
+  <rect x="808" y="362" width="209" height="10" rx="5" fill="url(#accent)"/>
+  <text x="808" y="356" font-family="system-ui" font-size="11" fill="rgba(255,255,255,0.4)">Operating Systems</text>
+  <text x="1040" y="372" font-family="system-ui" font-weight="700" font-size="12" fill="rgba(99,241,180,1)">95%</text>
+
+  <!-- Card footer badge -->
+  <rect x="808" y="400" width="110" height="28" rx="14" fill="rgba(99,102,241,0.25)" stroke="rgba(99,102,241,0.5)" stroke-width="1"/>
+  <text x="863" y="419" font-family="system-ui" font-weight="600" font-size="12" fill="rgba(165,180,252,1)" text-anchor="middle">Just now ✓</text>
+</svg>
