@@ -39,6 +39,11 @@ export default async function handler(req, res) {
       db.setStudentCache(creds.email, result.data).catch(() => {});
     }
 
+    // Set sessionId cookie (same as login.js) so subsequent requests are authenticated
+    const sessionId = Buffer.from(creds.email).toString('base64');
+    res.setHeader('Set-Cookie', `sessionId=${sessionId}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=31536000`);
+    result.sessionToken = sessionId;
+
     return res.status(200).json(result);
   } catch (e) {
     console.error('[refresh]', e.message);
