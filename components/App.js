@@ -110,10 +110,11 @@ export default function App() {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 270000);
+      const rememberToken = localStorage.getItem('srm_remember_token');
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: emailArg, password: null, sessionToken: token, forceRefresh }),
+        body: JSON.stringify({ email: emailArg, password: null, sessionToken: token, forceRefresh, remember_token: rememberToken }),
         signal: controller.signal,
       });
       clearTimeout(timeout);
@@ -122,6 +123,11 @@ export default function App() {
       if (res.status === 401 || json.error === 'session_expired') {
         expired = true;
       } else if (res.ok && json.data) {
+        // If backend silently re-logged in (session expired but remember_token worked), update session token
+        if (json.sessionToken) {
+          localStorage.setItem('srm_session_token', json.sessionToken);
+          setSavedToken(json.sessionToken);
+        }
         freshData = json.data;
       }
     } catch(e) {
@@ -134,8 +140,9 @@ export default function App() {
         if (expiredRememberToken) {
           backgroundRefreshWithToken(expiredRememberToken);
         } else {
+          // Session expired, no saved login — redirect to login but keep data cache intact
+          // so user sees their data immediately after re-logging in
           localStorage.removeItem('srm_session_token'); localStorage.removeItem('srm_session_email');
-          localStorage.removeItem(LS_DATA_KEY); localStorage.removeItem(LS_DATA_TIME);
           setSavedToken(''); setData(null); setView('login');
         }
       } else if (freshData) {
@@ -201,10 +208,11 @@ export default function App() {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 270000);
 
+      const rememberToken = localStorage.getItem('srm_remember_token');
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: emailArg, password: null, sessionToken: token }),
+        body: JSON.stringify({ email: emailArg, password: null, sessionToken: token, remember_token: rememberToken }),
         signal: controller.signal,
       });
       clearTimeout(timeout);
@@ -212,6 +220,10 @@ export default function App() {
       const json = await res.json();
 
       if (res.ok && json.data && !json.needsCaptcha) {
+        if (json.sessionToken) {
+          localStorage.setItem('srm_session_token', json.sessionToken);
+          setSavedToken(json.sessionToken);
+        }
         setData(json.data);
         saveDataCache(json.data);
         fetchSubStatus();
