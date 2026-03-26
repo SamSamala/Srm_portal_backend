@@ -848,6 +848,36 @@ function timeAgo(ts) {
   return new Date(ts).toLocaleDateString('en-IN', {day:'numeric', month:'short'});
 }
 
+// Parse LinkedIn age string (e.g. "5d","2w","1mo","3h") scraped at createdAt,
+// compute original post date, then return live relative age.
+function liveLinkedInAge(desc, createdAt) {
+  if (!desc || !createdAt) return null;
+  const m = desc.match(/^\[(.+?)\]/);
+  if (!m) return null;
+  const raw = m[1].trim();
+  const num = parseFloat(raw);
+  if (isNaN(num)) return raw;
+  let ms = 0;
+  if (/mo/i.test(raw)) ms = num * 30 * 24 * 60 * 60 * 1000;
+  else if (/w/i.test(raw)) ms = num * 7 * 24 * 60 * 60 * 1000;
+  else if (/d/i.test(raw)) ms = num * 24 * 60 * 60 * 1000;
+  else if (/h/i.test(raw)) ms = num * 60 * 60 * 1000;
+  else if (/m/i.test(raw)) ms = num * 60 * 1000;
+  else return raw;
+  const postedAt = createdAt - ms;
+  const diff = Date.now() - postedAt;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return mins + 'm';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 'h';
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return days + 'd';
+  const weeks = Math.floor(days / 7);
+  if (days < 30) return weeks + 'w';
+  const months = Math.floor(days / 30);
+  return months + 'mo';
+}
+
 export default function Dashboard({
   dark, setDark,
   view, setView,
@@ -1477,7 +1507,7 @@ export default function Dashboard({
                               <div className="int-title">{i.title}</div>
                               <div className="int-company">
                                 {i.company}{i.location?(' · '+i.location):''}
-                                {(()=>{const m=(i.description||'').match(/^\[(.+?)\]/);return m?<span style={{color:'var(--text3)',opacity:.7}}> · {m[1]}</span>:null;})()}
+                                {(()=>{const age=liveLinkedInAge(i.description,i.createdAt);return age?<span style={{color:'var(--text3)',opacity:.7}}> · {age}</span>:null;})()}
                               </div>
                             </div>
                             {i.stipend&&<span className="int-stipend">{i.stipend}</span>}
@@ -1485,7 +1515,6 @@ export default function Dashboard({
                           <div className="int-tags">
                             {(i.departments||[]).slice(0,2).map(d=><span key={d} className="int-tag">{d}</span>)}
                             {i.deadline&&<span className="int-tag int-tag-dead">Due {new Date(i.deadline).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</span>}
-                            {i.createdAt&&<span className="int-tag" style={{marginLeft:'auto',opacity:.7}}>{timeAgo(i.createdAt)}</span>}
                           </div>
                         </div>
                       ))}
