@@ -76,7 +76,7 @@ export default async function handler(req, res) {
               const newSessionId = Buffer.from(creds.email).toString('base64');
               res.setHeader(
                 'Set-Cookie',
-                `sessionId=${newSessionId}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=86400`
+                `sessionId=${newSessionId}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=31536000`
               );
               result.sessionToken = newSessionId;
               result.auto_relogged = true;
@@ -108,7 +108,7 @@ export default async function handler(req, res) {
       const sessionId = Buffer.from(email).toString('base64');
       res.setHeader(
         'Set-Cookie',
-        `sessionId=${sessionId}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=86400`
+        `sessionId=${sessionId}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=31536000`
       );
       result.sessionToken = sessionId;
       if (result.data) await trackUser(email);

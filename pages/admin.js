@@ -37,11 +37,65 @@ const OTHER_DEPTS = [
   'Automobile Engineering',
 ];
 
+const DEPT_ABBREVS = {
+  'cse':'Computer Science and Engineering',
+  'ece':'Electronics and Communication Engineering',
+  'eee':'Electrical and Electronics Engineering',
+  'ee':'Electrical and Electronics Engineering',
+  'mech':'Mechanical Engineering',
+  'me':'Mechanical Engineering',
+  'civil':'Civil Engineering',
+  'ce':'Civil Engineering',
+  'bio':'Biomedical Engineering',
+  'bme':'Biomedical Engineering',
+  'biomedical':'Biomedical Engineering',
+  'it':'Information Technology',
+  'chem':'Chemical Engineering',
+  'che':'Chemical Engineering',
+  'aero':'Aerospace Engineering',
+  'ae':'Aerospace Engineering',
+  'auto':'Automobile Engineering',
+  'automobile':'Automobile Engineering',
+  'csbs':'Computer Science and Business Systems',
+  'aids':'Artificial Intelligence and Data Science',
+  'ai':'Artificial Intelligence and Data Science',
+  'aiml':'Artificial Intelligence and Data Science',
+  'cyber':'Cyber Security',
+  'cs':'Cyber Security',
+  'se':'Software Engineering',
+  'swe':'Software Engineering',
+  'all':'all',
+  'tech':'tech',
+};
+
 function catToDepts(cat) {
-  const c = (cat || '').toLowerCase().trim();
-  if (c === 'bio') return BIO_DEPTS;
-  if (c === 'tech') return TECH_DEPTS;
-  return OTHER_DEPTS;
+  if (!cat) return DEPARTMENTS;
+  const raw = cat.trim();
+  const lower = raw.toLowerCase();
+  // Group shortcuts
+  if (lower === 'all') return DEPARTMENTS;
+  if (lower === 'tech') return TECH_DEPTS;
+  if (lower === 'other') return OTHER_DEPTS;
+  // Split by comma/semicolon/pipe for multiple departments
+  const parts = raw.split(/[,;|\/]/).map(s => s.trim()).filter(Boolean);
+  const matched = new Set();
+  for (const part of parts) {
+    const p = part.toLowerCase().trim();
+    // Abbreviation
+    if (DEPT_ABBREVS[p] && DEPT_ABBREVS[p] !== 'all' && DEPT_ABBREVS[p] !== 'tech') {
+      matched.add(DEPT_ABBREVS[p]); continue;
+    }
+    // Exact match (case-insensitive)
+    const exact = DEPARTMENTS.find(d => d.toLowerCase() === p);
+    if (exact) { matched.add(exact); continue; }
+    // Partial word match — every word in p must appear in department name
+    const words = p.split(/\s+/).filter(w => w.length > 2);
+    if (words.length) {
+      const partial = DEPARTMENTS.find(d => words.every(w => d.toLowerCase().includes(w)));
+      if (partial) { matched.add(partial); continue; }
+    }
+  }
+  return matched.size > 0 ? [...matched] : DEPARTMENTS;
 }
 
 function extractCompany(headline) {
@@ -202,6 +256,8 @@ export default function AdminPage() {
   const [showUsers, setShowUsers] = useState(false);
   const [subscribers, setSubscribers] = useState(null);
   const [subActionLoading, setSubActionLoading] = useState('');
+  const [selected, setSelected] = useState(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importStatus, setImportStatus] = useState('');
   const odsInputRef = useRef(null);
@@ -228,6 +284,37 @@ export default function AdminPage() {
       setInternships(Array.isArray(d) ? d : []);
     } catch { setInternships([]); }
     setLoading(false);
+    setSelected(new Set());
+  }
+
+  function toggleSelect(id) {
+    setSelected(prev => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (selected.size === internships.length && internships.length > 0) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(internships.map(i => i.id)));
+    }
+  }
+
+  async function handleBulkDelete() {
+    if (!selected.size || !window.confirm(`Delete ${selected.size} internship(s)? This cannot be undone.`)) return;
+    setBulkDeleting(true);
+    let done = 0;
+    for (const id of selected) {
+      try {
+        await fetch(`/api/internships?id=${id}`, { method: 'DELETE', headers: { 'x-admin-key': adminKey } });
+        done++;
+      } catch {}
+    }
+    setBulkDeleting(false);
+    fetchInternships(adminKey);
   }
 
   async function fetchUsers(key) {
@@ -573,15 +660,32 @@ export default function AdminPage() {
         <>
         <div className="sec-header">
           <h2 style={{margin:0}}>Internship Listings ({internships.length})</h2>
+          <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+            {internships.length > 0 && (
+              <label style={{display:'flex',alignItems:'center',gap:6,fontSize:13,cursor:'pointer',color:'#888'}}>
+                <input type="checkbox" checked={selected.size===internships.length&&internships.length>0} onChange={toggleSelectAll}
+                  style={{width:15,height:15,cursor:'pointer'}}/>
+                {selected.size===internships.length&&internships.length>0?'Deselect all':'Select all'}
+              </label>
+            )}
+            {selected.size > 0 && (
+              <button className="btn btn-r btn-sm" onClick={handleBulkDelete} disabled={bulkDeleting}>
+                {bulkDeleting?'Deleting…':`Delete Selected (${selected.size})`}
+              </button>
+            )}
+          </div>
         </div>
         {loading && <div className="empty">Loading…</div>}
         {!loading && internships.length === 0 && <div className="empty">No internships yet. Add one or import an ODS file!</div>}
         {internships.map(item => (
-          <div key={item.id} className="intern-row">
+          <div key={item.id} className="intern-row" style={{background:selected.has(item.id)?(dark?'rgba(79,141,255,.06)':'rgba(79,141,255,.04)'):''}}>
+            <input type="checkbox" checked={selected.has(item.id)} onChange={()=>toggleSelect(item.id)}
+              style={{width:15,height:15,flexShrink:0,cursor:'pointer',marginTop:2}}/>
             <div style={{flex:1,minWidth:0}}>
               <div className="intern-title">{item.title}</div>
               <div className="intern-meta">{item.company}{item.location ? ' · ' + item.location : ''}{item.stipend ? ' · ' + item.stipend : ''}</div>
               {item.deadline && <div className="intern-meta">Due: {new Date(item.deadline).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>}
+              {(item.departments||[]).length>0 && <div className="intern-meta" style={{marginTop:3}}>{(item.departments).slice(0,3).join(' · ')}{item.departments.length>3?` +${item.departments.length-3} more`:''}</div>}
             </div>
             <div className="intern-actions">
               <button className="btn btn-g btn-sm" onClick={() => openEdit(item)}>Edit</button>
