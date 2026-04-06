@@ -28,7 +28,7 @@ export default function App() {
   const [isFirstLogin,  setIsFirstLogin]  = useState(false);
   // Subscription state
   const [isPro,       setIsPro]       = useState(false);
-  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [proExpiry,   setProExpiry]   = useState(null);
 
   function saveDataCache(jsonData) {
     try {
@@ -54,6 +54,7 @@ export default function App() {
       if (res.ok) {
         const json = await res.json();
         setIsPro(!!json.isPro);
+        setProExpiry(json.periodEnd ?? null);
       }
     } catch(e) {}
   }
@@ -339,67 +340,6 @@ export default function App() {
     setView('dashboard');
   }
 
-  // Razorpay upgrade flow
-  async function startUpgrade() {
-    setShowUpgrade(false);
-    try {
-      const orderRes = await fetch('/api/billing/create-order', { method: 'POST' });
-      if (!orderRes.ok) {
-        const j = await orderRes.json().catch(() => ({}));
-        if (j.error === 'already_pro') { setIsPro(true); return; }
-        alert('Could not start payment. Please try again.');
-        return;
-      }
-      const { orderId, keyId } = await orderRes.json();
-
-      await new Promise((resolve, reject) => {
-        if (window.Razorpay) { resolve(); return; }
-        const s = document.createElement('script');
-        s.src = 'https://checkout.razorpay.com/v1/checkout.js';
-        s.onload = resolve;
-        s.onerror = () => reject(new Error('Failed to load payment gateway'));
-        document.body.appendChild(s);
-      });
-
-      await new Promise((resolve) => {
-        const rzp = new window.Razorpay({
-          key: keyId,
-          order_id: orderId,
-          amount: 5000,
-          currency: 'INR',
-          name: 'CampusHub Pro',
-          description: 'Pro access — ₹50',
-          theme: { color: dark ? '#4f8dff' : '#2563eb' },
-          handler: async function(response) {
-            try {
-              const verRes = await fetch('/api/billing/verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_order_id:   response.razorpay_order_id,
-                  razorpay_signature:  response.razorpay_signature,
-                }),
-              });
-              if (verRes.ok) {
-                setIsPro(true);
-              } else {
-                alert('Payment received but verification failed. Please contact support.');
-              }
-            } catch(e) {
-              alert('Verification error. Please contact support.');
-            }
-            resolve();
-          },
-          modal: { ondismiss: resolve },
-        });
-        rzp.open();
-      });
-    } catch(e) {
-      alert(e.message || 'Payment failed. Please try again.');
-    }
-  }
-
   // Logout
   async function logout() {
     localStorage.removeItem('srm_session_token');
@@ -419,6 +359,7 @@ export default function App() {
     setEmail('');
     setPass('');
     setIsPro(false);
+    setProExpiry(null);
     setLastUpdatedTs(0);
     setView('landing');
   }
@@ -442,7 +383,7 @@ export default function App() {
     isFirstLogin,
     onManualRefresh: () => backgroundRefresh(email, savedToken, true),
     isPro,
-    onUpgrade: () => setShowUpgrade(true),
+    proExpiry,
   };
 
   // Checking session (instant — only shows during useEffect)
@@ -500,63 +441,7 @@ export default function App() {
   // Subscribe prompt (first-time login only)
   if (showSubscribe) return <SubscribePrompt email={email} dark={dark} onDone={handleSubscribe} />;
 
-  return (
-    <>
-      <Dashboard {...shared} />
-      {showUpgrade && (
-        <UpgradeModal
-          dark={dark}
-          onClose={() => setShowUpgrade(false)}
-          onPay={startUpgrade}
-        />
-      )}
-    </>
-  );
-}
-
-function UpgradeModal({ dark, onClose, onPay }) {
-  const surf   = dark ? '#0c1120' : '#fff';
-  const border = dark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.1)';
-  const text   = dark ? '#eef2ff' : '#1a1510';
-  const text2  = dark ? '#8896b3' : '#6b6155';
-  return (
-    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',backdropFilter:'blur(4px)',
-      display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:16}}
-      onClick={onClose}>
-      <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}`}</style>
-      <div style={{background:surf,border:'1px solid '+border,borderRadius:20,
-        padding:'32px 28px',maxWidth:360,width:'100%',
-        boxShadow:'0 24px 48px rgba(0,0,0,.4)',animation:'fadeUp .3s ease both'}}
-        onClick={e=>e.stopPropagation()}>
-        <div style={{fontSize:32,textAlign:'center',marginBottom:12}}>🔒</div>
-        <div style={{fontSize:20,fontWeight:800,color:text,textAlign:'center',marginBottom:8}}>
-          Upgrade to Access
-        </div>
-        <div style={{fontSize:13,color:text2,lineHeight:1.65,textAlign:'center',marginBottom:20}}>
-          Internship listings are a <strong style={{color:text}}>Pro</strong> feature. Get full access to all available openings for just <strong style={{color:'#4f8dff'}}>₹50</strong>.
-        </div>
-        <ul style={{listStyle:'none',padding:0,margin:'0 0 22px',display:'flex',flexDirection:'column',gap:8}}>
-          {['Browse all internship listings','New openings added regularly'].map(f=>(
-            <li key={f} style={{display:'flex',alignItems:'center',gap:10,fontSize:13,color:text2}}>
-              <span style={{color:'#22d17a',fontWeight:700,fontSize:16,lineHeight:1}}>✓</span>{f}
-            </li>
-          ))}
-        </ul>
-        <button onClick={onPay} style={{width:'100%',padding:'13px',borderRadius:10,
-          border:'none',background:'linear-gradient(135deg,#4f8dff,#7c5cfc)',color:'#fff',
-          fontSize:14,fontWeight:700,cursor:'pointer',marginBottom:10,transition:'opacity .15s'}}
-          onMouseOver={e=>e.currentTarget.style.opacity='.88'}
-          onMouseOut={e=>e.currentTarget.style.opacity='1'}>
-          Upgrade — ₹50 →
-        </button>
-        <button onClick={onClose} style={{width:'100%',padding:'11px',borderRadius:10,
-          border:'1px solid '+border,background:'transparent',color:text2,
-          fontSize:13,fontWeight:500,cursor:'pointer'}}>
-          Maybe later
-        </button>
-      </div>
-    </div>
-  );
+  return <Dashboard {...shared} />;
 }
 
 function SaveLoginPrompt({ dark, onYes, onNo }) {

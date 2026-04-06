@@ -270,10 +270,13 @@ export default function AdminPage() {
   const [contentForm,setContentForm]=useState({title:'',body:'',imageUrl:'',linkUrl:'',linkLabel:'',sortOrder:0});
   const [contentSaving,setContentSaving]=useState(false);
   const [contentErr,setContentErr]=useState('');
+  // Bug reports state
+  const [bugReports,setBugReports]=useState([]);
+  const [bugReportsLoading,setBugReportsLoading]=useState(false);
 
   useEffect(() => {
     const k = typeof window !== 'undefined' ? sessionStorage.getItem('adminKey') : '';
-    if (k) { setAdminKey(k); fetchInternships(k); fetchUsers(k); fetchContent(k); fetchSubscribers(k); }
+    if (k) { setAdminKey(k); fetchInternships(k); fetchUsers(k); fetchContent(k); fetchSubscribers(k); fetchBugReports(k); }
   }, []);
 
   async function fetchInternships(key) {
@@ -285,6 +288,34 @@ export default function AdminPage() {
     } catch { setInternships([]); }
     setLoading(false);
     setSelected(new Set());
+  }
+
+  async function fetchBugReports(key) {
+    setBugReportsLoading(true);
+    try {
+      const r = await fetch('/api/admin/bug-reports', { headers: { 'x-admin-key': key } });
+      const d = await r.json();
+      setBugReports(Array.isArray(d) ? d : []);
+    } catch { setBugReports([]); }
+    setBugReportsLoading(false);
+  }
+
+  async function updateBugStatus(id, status, key) {
+    await fetch('/api/admin/bug-reports', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': key },
+      body: JSON.stringify({ id, status }),
+    });
+    fetchBugReports(key);
+  }
+
+  async function deleteBugReport(id, key) {
+    if (!confirm('Delete this bug report?')) return;
+    await fetch(`/api/admin/bug-reports?id=${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: { 'x-admin-key': key },
+    });
+    fetchBugReports(key);
   }
 
   function toggleSelect(id) {
@@ -654,6 +685,7 @@ export default function AdminPage() {
           <button className={'stab'+(activeSection==='guide2'?' on':'')} onClick={()=>setActiveSection('guide2')}>Guide Topic 2</button>
           <button className={'stab'+(activeSection==='wellness'?' on':'')} onClick={()=>setActiveSection('wellness')}>Mental Health</button>
           <button className={'stab'+(activeSection==='subscribers'?' on':'')} onClick={()=>setActiveSection('subscribers')}>Subscribers</button>
+          <button className={'stab'+(activeSection==='bugreports'?' on':'')} onClick={()=>{setActiveSection('bugreports');fetchBugReports(adminKey);}}>Bug Reports</button>
         </div>
 
         {activeSection==='internships'&&(
@@ -739,8 +771,48 @@ export default function AdminPage() {
           </>
         )}
 
+        {/* BUG REPORTS SECTION */}
+        {activeSection==='bugreports'&&(
+          <>
+            <div className="sec-header">
+              <h2 style={{margin:0}}>Bug Reports <span style={{fontSize:13,fontWeight:400,color:'#888'}}>({bugReports.length})</span></h2>
+              <button className="btn btn-g btn-sm" onClick={()=>fetchBugReports(adminKey)}>↻ Refresh</button>
+            </div>
+            {bugReportsLoading&&<div className="empty">Loading…</div>}
+            {!bugReportsLoading&&bugReports.length===0&&<div className="empty">No bug reports yet.</div>}
+            {bugReports.map(b=>{
+              const statusColor=b.status==='resolved'?'#22d17a':b.status==='wont_fix'?'#888':'#f59e0b';
+              const ts=b.timestamp?new Date(b.timestamp).toLocaleString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+              return(
+                <div key={b.id} className="intern-row" style={{flexDirection:'column',gap:8}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12}}>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div className="intern-title">{b.subject}</div>
+                      <div className="intern-meta">{b.email||'Anonymous'} · {ts}</div>
+                    </div>
+                    <div style={{display:'flex',gap:6,alignItems:'center',flexShrink:0}}>
+                      <span style={{fontSize:10,padding:'2px 9px',borderRadius:20,fontWeight:700,background:statusColor+'22',color:statusColor,border:'1px solid '+statusColor+'44'}}>
+                        {b.status||'open'}
+                      </span>
+                      <select value={b.status||'open'}
+                        onChange={e=>updateBugStatus(b.id,e.target.value,adminKey)}
+                        style={{fontSize:11,padding:'3px 6px',borderRadius:7,border:'1px solid #333',background:'#161616',color:'#e0e0e0',cursor:'pointer'}}>
+                        <option value="open">open</option>
+                        <option value="resolved">resolved</option>
+                        <option value="wont_fix">wont_fix</option>
+                      </select>
+                      <button className="btn btn-r btn-xs" onClick={()=>deleteBugReport(b.id,adminKey)}>Delete</button>
+                    </div>
+                  </div>
+                  <div style={{fontSize:12,color:'#888',whiteSpace:'pre-wrap',lineHeight:1.5,borderTop:'1px solid #1e1e1e',paddingTop:8}}>{b.description}</div>
+                </div>
+              );
+            })}
+          </>
+        )}
+
         {/* CONTENT SECTIONS — Guide + Wellness */}
-        {activeSection!=='internships'&&activeSection!=='subscribers'&&(()=>{
+        {activeSection!=='internships'&&activeSection!=='subscribers'&&activeSection!=='bugreports'&&(()=>{
           const sectionMap={'guide1':{label:'Internship Guide — Topic 1',data:guideContent1},'guide2':{label:'Internship Guide — Topic 2',data:guideContent2},'wellness':{label:'Mental Health & Wellness',data:wellContent}};
           const {label,data}=sectionMap[activeSection]||{};
           return(

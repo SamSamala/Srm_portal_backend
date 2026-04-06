@@ -896,7 +896,7 @@ export default function Dashboard({
   dataLoading, setDataLoading,
   handleLogin, handleCaptcha, logout,
   lastUpdatedTs, onManualRefresh, isFirstLogin,
-  isPro, onUpgrade,
+  isPro, proExpiry,
 }) {
   const [tab,setTab]=useState('dashboard');
   const [activeDay,setActiveDay]=useState('Day 1');
@@ -950,15 +950,6 @@ export default function Dashboard({
     if(!data) return;
     if(data.plannerData) setPlannerData(data.plannerData);
   },[data]);
-  // Pre-fetch internship count on mount so dashboard card always shows a number
-  useEffect(()=>{
-    if(internCount!==null)return;
-    fetch('/api/internships').then(async r=>{
-      const d=await r.json();
-      if(r.status===403&&d.error==='pro_required') setInternCount(d.count??0);
-      else if(Array.isArray(d)) setInternCount(d.length);
-    }).catch(()=>{});
-  },[isPro]);
   useEffect(()=>{
     if(tab!=='internships')return;
     // Reset and re-fetch whenever isPro changes (e.g. after upgrade)
@@ -978,7 +969,7 @@ export default function Dashboard({
   },[tab,isPro]);
   // (no auto-prefill — show all internships by default)
 
-  function goTab(t){if(t==='internships'&&!isPro){onUpgrade?.();return;}setTab(t);}
+  function goTab(t){setTab(t);}
   async function runPrediction() {
     if (!predFrom || !predTo) return;
     setPredResult(null);
@@ -1035,7 +1026,7 @@ export default function Dashboard({
     {k:'marks',l:'Marks'},
     {k:'timetable',l:'Timetable'},
     {k:'calendar',l:'Calendar'},
-    {k:'internships',l:'Internships'},
+    ...(isPro?[{k:'internships',l:'Internships'}]:[]),
   ];
 
   // -- Loading screen --
@@ -1286,17 +1277,16 @@ export default function Dashboard({
                           <div className="scard-sub">across {marks.length} subjects</div>
                           <div className="scard-bar" style={{background:'linear-gradient(90deg,var(--accent),transparent)'}}/>
                         </div>
-                        <div className="scard" style={{cursor:'pointer'}} onClick={()=>isPro?goTab('internships'):onUpgrade?.()}>
-                          <div className="scard-lbl" style={{display:'flex',alignItems:'center',gap:5}}>
-                            Internships
-                            {!isPro&&<span style={{fontSize:10,lineHeight:1}}>🔒</span>}
+                        {isPro&&(
+                        <div className="scard" style={{cursor:'pointer'}} onClick={()=>goTab('internships')}>
+                          <div className="scard-lbl">Internships</div>
+                          <div className="scard-val" style={{color:'var(--acc2)'}}>
+                            {internships!==null?internships.length:'–'}
                           </div>
-                          <div className="scard-val" style={{color:isPro?'var(--acc2)':'var(--text3)'}}>
-                            {internCount!==null?internCount:(internships!==null?internships.length:'–')}
-                          </div>
-                          <div className="scard-sub">{isPro?'tap to browse openings':'upgrade to access'}</div>
-                          <div className="scard-bar" style={{background:isPro?'linear-gradient(90deg,var(--acc2),transparent)':'linear-gradient(90deg,var(--text3),transparent)'}}/>
+                          <div className="scard-sub">tap to browse openings</div>
+                          <div className="scard-bar" style={{background:'linear-gradient(90deg,var(--acc2),transparent)'}}/>
                         </div>
+                        )}
                         <div className="scard scard--action" style={{cursor:'pointer',borderColor:'rgba(79,141,255,.28)',background:'rgba(79,141,255,.06)'}} onClick={openPredict}>
                           <div className="scard-lbl">Predict Attendance</div>
                           <div className="scard-act-ico">📊</div>
@@ -1453,34 +1443,8 @@ export default function Dashboard({
                 </>
               )}
 
-              {/* INTERNSHIPS TAB */}
-              {tab==='internships'&&(()=>{
-                // Non-pro: show upgrade wall
-                if(!isPro&&!internLoading&&internships===null){
-                  const cnt=internCount??0;
-                  return(
-                    <>
-                      <div className="seclbl">Internships</div>
-                      <div style={{display:'flex',flexDirection:'column',alignItems:'center',
-                        justifyContent:'center',padding:'48px 24px',gap:16,textAlign:'center'}}>
-                        <div style={{fontSize:48,lineHeight:1}}>🔒</div>
-                        <div style={{fontSize:17,fontWeight:700,color:'var(--text)'}}>
-                          {cnt>0?cnt+' internship'+(cnt===1?'':'s')+' available':'Internships available'}
-                        </div>
-                        <div style={{fontSize:13,color:'var(--text3)',maxWidth:280,lineHeight:1.6}}>
-                          Upgrade to Pro to browse and apply to internship openings posted by companies.
-                        </div>
-                        <button onClick={onUpgrade} style={{padding:'12px 28px',borderRadius:10,border:'none',
-                          background:'linear-gradient(135deg,#4f8dff,#7c5cfc)',color:'#fff',
-                          fontSize:14,fontWeight:700,cursor:'pointer',transition:'opacity .15s'}}
-                          onMouseOver={e=>e.currentTarget.style.opacity='.88'}
-                          onMouseOut={e=>e.currentTarget.style.opacity='1'}>
-                          Upgrade to Access →
-                        </button>
-                      </div>
-                    </>
-                  );
-                }
+              {/* INTERNSHIPS TAB — only rendered when isPro */}
+              {tab==='internships'&&isPro&&(()=>{
                 const allDepts=[...new Set((internships||[]).flatMap(i=>i.departments||[]))].sort();
                 const filtered=(internships||[]).filter(i=>{
                   return !deptFilter||(i.departments||[]).some(d=>d.toLowerCase().includes(deptFilter.toLowerCase()));
@@ -1492,6 +1456,7 @@ export default function Dashboard({
                       Internship Guide
                     </button>
                     <div className="seclbl">Internships</div>
+                    {proExpiry&&<div style={{fontSize:11,color:'var(--text3)',marginBottom:8}}>Access valid until: {new Date(proExpiry).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>}
                     <div style={{fontSize:11,color:'var(--text3)',marginBottom:8}}>Last updated: 25 March 2026</div>
                     <div className="int-filters">
                       <select value={deptFilter} onChange={e=>setDeptFilter(e.target.value)}>
